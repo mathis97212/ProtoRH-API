@@ -43,4 +43,4 @@ CREATE TABLE Event (
     Description TEXT,
     UserID int,
     DepartementID int
-)
+);
