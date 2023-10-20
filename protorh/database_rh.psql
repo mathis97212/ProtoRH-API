@@ -1,7 +1,7 @@
 CREATE DATABASE PostgreSQL;
 
 CREATE TABLE User (
-    ID int,
+    ID INT AUTO_INCREMENT PRIMARY KEY,
     Email TEXT,
     Password VARCHAR(255),
     Firstname TEXT,     
@@ -12,24 +12,26 @@ CREATE TABLE User (
     Age int,                        
     Meta JSON,                      
     RegistrationDate DATE,       
-    Token TEXT,
+    Token VARCHAR(255),
     Role TEXT
 );
 
--- Add hash token for User table
+-- Hash the token and the password
+CREATE EXTENSION pgcrypto;
+INSERT INTO User (Password) VALUES (crypt(password_hash, gen_salt('bf')));
 
 CREATE TABLE Departement (
-    ID int,
+    ID INT AUTO_INCREMENT PRIMARY KEY,
    Name TEXT
 );
 
 CREATE TABLE RequestRH (
-    ID int,
-    UserID int,
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT REFERENCES User(id),
     Content TEXT,
     RegistrationDate DATE,
-    Visibility Boolean,
-    Close Boolean,
+    Visibility BOOLEAN,
+    Close BOOLEAN,
     LastAction DATE,
     ContentHistory JSON
 );
@@ -37,10 +39,10 @@ CREATE TABLE RequestRH (
 -- JSON[] in RequestRH
 
 CREATE TABLE Event (
-    ID int,
+    ID INT AUTO_INCREMENT PRIMARY KEY,
     Name TEXT,
     Date DATE,
     Description TEXT,
-    UserID int,
-    DepartementID int
+    UserID INT REFERENCES User(id),
+    DepartementID INT REFERENCES Departement(id)
 );
