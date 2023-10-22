@@ -1,11 +1,20 @@
-CREATE USER jawa WITH PASSWORD 'ilpleut';
-ALTER USER jawa CREATEDB;
-ALTER USER jawa WITH SUPERUSER;
 
-CREATE DATABASE PostgreSQL;
+-- supprime l'anienne BDD avant d'éxectuer le script
+DROP DATABASE IF EXISTS protorh;
+CREATE DATABASE protorh;
 
-CREATE TABLE User (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
+-- permet de se connecter à la BDD protorh
+\c protorh;
+
+-- supprime les aniennes tables avant d'éxectuer le script
+DROP TABLE IF EXISTS "Event";
+DROP TABLE IF EXISTS "RequestRH";
+DROP TABLE IF EXISTS "Departement";
+DROP TABLE IF EXISTS "User";
+
+-- Créer une table User 
+CREATE TABLE "User" (
+    ID serial PRIMARY KEY,
     Email TEXT,
     Password VARCHAR(255),
     Firstname TEXT,     
@@ -20,18 +29,17 @@ CREATE TABLE User (
     Role TEXT
 );
 
--- Hash the token and the password
-CREATE EXTENSION pgcrypto;
-INSERT INTO User (Password) VALUES (crypt(password_hash, gen_salt('bf')));
-
-CREATE TABLE Departement (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
+-- Créer une table Departement
+CREATE TABLE "Departement" (
+    ID serial PRIMARY KEY,
    Name TEXT
 );
 
-CREATE TABLE RequestRH (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    UserID INT REFERENCES User(id),
+-- Créer une table RequestRH, fais références à la table User
+DROP TABLE IF EXISTS "RequestRH";
+CREATE TABLE "RequestRH" (
+    ID serial PRIMARY KEY,
+    UserID INT REFERENCES "User"(id),
     Content TEXT,
     RegistrationDate DATE,
     Visibility BOOLEAN,
@@ -40,13 +48,12 @@ CREATE TABLE RequestRH (
     ContentHistory JSON
 );
 
--- JSON[] in RequestRH
-
-CREATE TABLE Event (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
+-- Créer une table Event, fais références aux tables User/Departement
+CREATE TABLE "Event" (
+    ID serial PRIMARY KEY,
     Name TEXT,
     Date DATE,
     Description TEXT,
-    UserID INT REFERENCES User(id),
-    DepartementID INT REFERENCES Departement(id)
+    UserID INT REFERENCES "User"(id),
+    DepartementID INT REFERENCES "Departement"(id)
 );
