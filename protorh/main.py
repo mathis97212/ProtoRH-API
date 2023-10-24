@@ -12,6 +12,9 @@ create = create_engine(DATABASE_URL)
 if not database_exists(engine.url):
     create_database(engine.url, template="template0")
 
+SessionLocal = sessionmaker(autocommit = False, autoflush=False, bind=engine)
+base = declarative_base
+
 app = FastAPI()
 
 # Endpoint : /
