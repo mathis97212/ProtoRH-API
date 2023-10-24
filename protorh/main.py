@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
+#from user import User, Create, Update, UpdatePassword, UploadProfilePicture
 
 DATABASE_URL = "postgresql://jawa:123@localhost/ProtoRH"
 
@@ -13,7 +14,7 @@ if not database_exists(engine.url):
     create_database(engine.url, template="template0")
 
 SessionLocal = sessionmaker(autocommit = False, autoflush=False, bind=engine)
-base = declarative_base
+Base = declarative_base
 
 app = FastAPI()
 
