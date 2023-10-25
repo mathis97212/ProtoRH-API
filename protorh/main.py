@@ -1,5 +1,6 @@
 import subprocess, uvicorn
 <<<<<<< HEAD
+<<<<<<< HEAD
 import os
 from fastapi import FastAPI
 from sqlalchemy import create_engine, Column, Integer, String, Float, text, engine
@@ -65,3 +66,6 @@ async def connect_user(user: User):
 =======
 from sqlalchemy import create_engine
 >>>>>>> refs/remotes/origin/Ilyes
+=======
+from sqlalchemy import create_engine
+>>>>>>> efcff1b3bcb39f24fc1cdb35a1d69f092fb93aee
