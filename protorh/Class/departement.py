@@ -1,12 +1,14 @@
 import subprocess, uvicorn
-from fastapi import FastAPI
-from sqlalchemy import create_engine, Column, Integer, String, Float, text, engine, JSON
+import os
+from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
+from fastapi import FastAPI
+from datetime import date
 
-Base = declarative_base
+Base = declarative_base()
 
 class Department(Base):
     __tablename__ = "Department"
@@ -24,4 +26,3 @@ class GetUsersInDepartment(BaseModel):
     __tablename__ = "GetUsersInDepartment"
     id : int
     name : str
-

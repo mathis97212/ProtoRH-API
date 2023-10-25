@@ -3,6 +3,10 @@
 DROP DATABASE IF EXISTS protorh;
 CREATE DATABASE protorh;
 
+CREATE USER IF NOT EXISTS app WITH PASSWORD '123';
+ALTER USER app CREATEDB; 
+ALTER USER app WITH SUPERUSER;
+
 -- permet de se connecter à la BDD protorh
 \c protorh;
 
