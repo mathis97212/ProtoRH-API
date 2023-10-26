@@ -19,18 +19,18 @@ DROP TABLE IF EXISTS "User";
 -- Créer une table User 
 CREATE TABLE "User" (
     ID serial PRIMARY KEY,
-    Email TEXT,
-    Password VARCHAR(255),
-    Firstname TEXT,     
-    Lastname TEXT,    
-    BirthdayDate DATE,            
-    Address VARCHAR(255),                
-    PostalCode VARCHAR(255),              
-    Age int,                        
-    Meta JSON,                      
-    RegistrationDate DATE,       
-    Token VARCHAR(255),
-    Role TEXT
+    email TEXT,
+    password VARCHAR(255),
+    firstname TEXT,     
+    lastname TEXT,    
+    birthdayDate DATE,            
+    address VARCHAR(255),                
+    postalcode VARCHAR(255),              
+    age int,                        
+    meta JSON,                      
+    registrationdate DATE,       
+    token VARCHAR(255),
+    role TEXT
 );
 
 -- Créer une table Departement

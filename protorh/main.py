@@ -12,18 +12,6 @@ from Class.user import User, Create, Update, UpdatePassword, UploadProfilePictur
 from Class.requestrh import RemoveRequestRH, UpdateRequestRH, RequestRH, GetRequestRH
 from Class.event import Event, CreateEvent, GetEvent, RemoveEvent
 
-from routes import create_routes
-
-import routes
-
-import hashlib
-
-from dotenv import load_dotenv, dotenv_values
-
-Base = declarative_base
-
-salt = os.getenv("SALT")
-
 url_object = URL.create(
     "postgresql",
     username=os.getenv("DATABASE_USER"),
@@ -33,11 +21,12 @@ url_object = URL.create(
 )
 
 engine = create_engine(url_object)
-
 app = FastAPI()
 
+from routes import create_routes
 create_routes(app, engine)
 
 SessionLocal = sessionmaker(autocommit = False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
