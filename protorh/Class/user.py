@@ -37,6 +37,11 @@ class Create(BaseModel):
     birthdaydate : date
     address : str
     postalcode : int
+    age: int
+    meta:  JSON
+    registrationdate: str
+    token: str
+    role: str
 
 class Update(BaseModel):
     email : str
