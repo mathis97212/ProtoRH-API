@@ -36,12 +36,7 @@ class Create(BaseModel):
     lastname : str
     birthdaydate : date
     address : str
-    postalcode : int
-    age: int
-    meta:  JSON
-    registrationdate: str
-    token: str
-    role: str
+    postalcode : str
 
 class Update(BaseModel):
     email : str
@@ -50,7 +45,7 @@ class Update(BaseModel):
     lastname : str
     birthdaydate : date
     address : str
-    postalcode : int
+    postalcode : str
     age : int
 
 class UpdatePassword(BaseModel):
@@ -64,5 +59,5 @@ class UploadProfilePicture(BaseModel):
     lastname : str
     birthdaydate : date
     address : str
-    postalcode : int
+    postalcode : str
     age : int

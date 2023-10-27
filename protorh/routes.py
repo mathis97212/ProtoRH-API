@@ -7,15 +7,25 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
 from Class.user import User, Create, Update, UpdatePassword, UploadProfilePicture
-import datetime
+from datetime import datetime
 import hashlib
 import jwt
+from curses.ascii import isdigit
 
 from dotenv import load_dotenv, dotenv_values
 
 Base = declarative_base
 
 salt = os.getenv("SALT")
+
+# fonction permettant de hasher un mot de passe de type md5 en paramètre
+def hash_password(mdp, salt):
+    password = mdp.encode('utf-8')
+    salted_password = password + salt
+    hash_object = hashlib.md5(salted_password)
+    password_hashed = hash_object.hexdigest()
+    
+    return password_hashed
 
 def create_routes(app, engine):
     # Endpoint : /
@@ -40,22 +50,15 @@ def create_routes(app, engine):
             "birthdaydate": user.birthdaydate,
             "address": user.address,
             "postalcode": user.postalcode,
-            "age": user.age,  
-            "meta": user.meta,
-            "registrationdate": user.registrationdate,
-            "token": user.token,
-            "role": user.role
         }
 
-
         # vérifie que le mot de passe repeat correspond bien au mot de passe, si oui je le hash
-        if "password" != "password_repeat":
-            return {"Please make sure to enter the same password"} 
+        if values["password"] != values["password_repeat"]:
+            return {"Please make sure to enter the same password"}
+        elif not user.postalcode.isdigit() and len(values["postalcode"]) != 5:
+            return {"Code postale invalide"}
         else:
-            password = "password".encode('utf-8') 
-            hash_object = hashlib.md5(password+salt)
-            hex_dig = hash_object.hexdigest()
-            password_hash = hex_dig
+            password_hashed = hash_password(values["password"], salt)
 
         values = {
             "birthdaydate": user.birthdaydate,
@@ -69,9 +72,28 @@ def create_routes(app, engine):
         current_date = datetime.now()
 
         # calcule l'age à partir de la date de naissance
-        age = current_date - birthday_date
+        age = current_date[:4] - birthday_date[:4]
 
-        token= 
+        secret_key = os.getenv("SECRET_KEY")
+
+        payload = {
+            "email": values["email"],
+            "firstname": values["firstname"],
+            "lastname": values["lastname"]
+        }
+
+        token = jwt.encode(payload, secret_key, algorithm="HS256")+salt
+
+        token_to_hash = token.encode('utf-8') 
+        hash_object = hashlib.djb2(token_to_hash)
+        hex_dig = hash_object.hexdigest()
+        token_hashed = hex_dig
+
+        meta = []
+
+        registrationdate = datetime.now()
+
+        departements = None
 
         # vérifie si un compte n'existe pas déjà avec cet email
         query = text("SELECT email FROM 'User'")
@@ -83,19 +105,20 @@ def create_routes(app, engine):
         else:
             values = {
                 "email": user.email,
-                "password": password_hash,
+                "password": password_hashed,
+                "password_repeat": password_hashed,
                 "firstname": user.firstname,
                 "lastname": user.lastname,
                 "birthdaydate": user.birthdaydate,
                 "address": user.address,
                 "postalcode": user.postalcode,
                 "age": age,  
-                "meta": JSON{},
-                "registrationdate": user.registrationdate,
-                "token": user.token,
-                "role": user.role 
+                "meta": meta,
+                "registrationdate": registrationdate,
+                "token": token_hashed,
+                "role": user,
+                "departements": departements
             }
-            
             
             # sauvegarde l'utilisateur dans la base de données
             query = text("INSERT INTO 'User'(email, password, firstname, lastname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role) VALUES (:email, :password, :firstname, :lastname, :birthdaydate, :address, :postalcode, :age, :meta, :registrationdate, :token, :role) RETURNING *")
