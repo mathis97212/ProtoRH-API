@@ -27,6 +27,7 @@ class User(Base):
     registrationdate = (String)
     token = Column(String, index=True)
     role = Column(String, index=True)
+    departements = Column(Integer)
 
 class Create(BaseModel):
     email : str
