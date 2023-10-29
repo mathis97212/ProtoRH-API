@@ -17,6 +17,7 @@ class User(Base):
     name = Column(String, index=True)
     email = Column(String, index=True)
     password = Column(String, index=True)
+    password_repeat = Column(String, index=True)
     lastname = Column(String, index=True)
     firstname = Column(String, index=True)
     birthdaydate = Column(String, index=True)
@@ -27,7 +28,7 @@ class User(Base):
     registrationdate = (String)
     token = Column(String, index=True)
     role = Column(String, index=True)
-    departements = Column(Integer)
+    departements = Column(Integer, nullable=True)
 
 class Create(BaseModel):
     email : str

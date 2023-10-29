@@ -3,6 +3,8 @@ DROP DATABASE IF EXISTS protorh;
 CREATE DATABASE protorh;
 
 CREATE USER app WITH PASSWORD '123';
+ALTER USER app CREATEDB; 
+ALTER USER app WITH SUPERUSER;
 
 -- permet de se connecter à la BDD protorh
 \c protorh;
@@ -11,13 +13,14 @@ CREATE USER app WITH PASSWORD '123';
 DROP TABLE IF EXISTS "Event";
 DROP TABLE IF EXISTS "RequestRH";
 DROP TABLE IF EXISTS "Departement";
-DROP TABLE IF EXISTS "User";
+DROP TABLE IF EXISTS "Users";
 
 -- Créer une table User 
-CREATE TABLE "User" (
+CREATE TABLE "Users" (
     ID serial PRIMARY KEY,
     email TEXT,
     password VARCHAR(255),
+    password_repeat VARCHAR(255),
     firstname TEXT,     
     lastname TEXT,    
     birthdayDate DATE,            
@@ -27,7 +30,8 @@ CREATE TABLE "User" (
     meta JSON,                      
     registrationdate DATE,       
     token VARCHAR(255),
-    role TEXT
+    role TEXT,
+    departements  INT NULL
 );
 
 -- Créer une table Departement
@@ -40,7 +44,7 @@ CREATE TABLE "Departement" (
 DROP TABLE IF EXISTS "RequestRH";
 CREATE TABLE "RequestRH" (
     ID serial PRIMARY KEY,
-    UserID INT REFERENCES "User"(id),
+    UserID INT REFERENCES "Users"(id),
     Content TEXT,
     RegistrationDate DATE,
     Visibility BOOLEAN,
@@ -55,6 +59,6 @@ CREATE TABLE "Event" (
     Name TEXT,
     Date DATE,
     Description TEXT,
-    UserID INT REFERENCES "User"(id),
+    UserID INT REFERENCES "Users"(id),
     DepartementID INT REFERENCES "Departement"(id)
 );
