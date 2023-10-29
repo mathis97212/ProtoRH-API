@@ -22,7 +22,7 @@ Base = declarative_base()
 salt = os.getenv("SALT")
 
 # fonction permettant de hasher un mot de passe de type md5 en paramètre
-def hash_password(mdp):
+def hash_md5(mdp):
     password = mdp
     salted_password = password + salt
     hash_object = hashlib.md5(salted_password.encode("utf-8"))
@@ -53,7 +53,9 @@ def create_routes(app, engine):
     @app.post("/user/create/")
     async def create_user(user: Create):
         # récupère l'ensemble des paramètres
-        query = text("SELECT email, password, password_repeat, firstname, lastname, birthdaydate, address, postalcode FROM 'User'")
+        query = text("""
+        SELECT email, password, password_repeat, firstname, lastname, birthdaydate, address, postalcode FROM "User"
+        """)
         values = {
             "email": user.email,
             "password": user.password,
@@ -64,6 +66,8 @@ def create_routes(app, engine):
             "address": user.address,
             "postalcode": user.postalcode,
         }
+        with engine.begin() as conn:
+            conn.execute(query)
 
         # vérifie que le mot de passe repeat correspond bien au mot de passe sinon je retourne une erreur
         if values["password"] != values["password_repeat"]:
@@ -73,13 +77,11 @@ def create_routes(app, engine):
             return {"Code postale invalide"}
         else:
             mdp = str((values["password"]))
-            password_hashed = hash_password(mdp)
+            password_hashed = hash_md5(mdp)
 
         values = {
             "birthdaydate": user.birthdaydate,
         }
-
-        # récupère la valeur de l'année de naissance
 
         age = from_dob_to_age(values["birthdaydate"])
 
@@ -94,13 +96,6 @@ def create_routes(app, engine):
         secret_key = str(secret_key)
 
         token = jwt.encode(payload, secret_key, algorithm="HS256")+salt
-        token_hashed = hash_djb2(token)
-
-        meta = json.dumps({})
-
-        registrationdate = datetime.date.today()
-
-        departements = None
 
         # vérifie si un compte n'existe pas déjà avec cet email
         query = text("SELECT email FROM 'User'")
@@ -111,8 +106,8 @@ def create_routes(app, engine):
             return {"Account already exists with this email"}
         else:
             # sauvegarde l'utilisateur dans la base de données
-            query = text(
-            "INSERT INTO 'User' (email, password, firstname, lastname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role) VALUES (:email, :password, :firstname, :lastname, :birthdaydate, :address, :postalcode, :age, :meta, :registrationdate, :token, :role) RETURNING *")
+            query = text(""" INSERT INTO "User" (email, password, firstname, lastname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements) 
+                         VALUES (:email, :password, :firstname, :lastname, :birthdaydate, :address, :postalcode, :age, :meta, :registrationdate, :token, :role, :departements) RETURNING *""")
 
             values = {
                 "email": user.email,
@@ -122,13 +117,13 @@ def create_routes(app, engine):
                 "birthdaydate": user.birthdaydate,
                 "address": user.address,
                 "postalcode": user.postalcode,
-                "age": age,
-                "meta": meta,
-                "registrationdate": registrationdate,
-                "token": token_hashed,
-                "role": "user"
+                "age": from_dob_to_age(values["birthdaydate"]),
+                "meta": json.dumps({}),
+                "registrationdate": datetime.date.today(),
+                "token": hash_djb2(token),
+                "role": "user",
+                "departements": None
             }
             with engine.begin() as conn:
-                result = conn.execute(query, **values)
-                return result.fetchone()
+                conn.execute(query)
 
