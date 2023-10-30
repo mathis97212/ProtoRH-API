@@ -2,13 +2,13 @@ import json
 import subprocess, uvicorn
 from flask import session
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import create_engine, Column, Integer, String, Date, Boolean, engine_from_config, text, JSON, URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
-from Class.user import User, Create, Update, UpdatePassword, UploadProfilePicture
+from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture
 import datetime
 import hashlib
 import jwt
@@ -16,12 +16,11 @@ from curses.ascii import isdigit
 from fastapi import APIRouter
 from database import get_db
 
-from dotenv import load_dotenv, dotenv_values
-
 engine = get_db()
 router = APIRouter()
 
 salt = os.getenv("SALT")
+print(salt)
 
 # fonction permettant de hasher un mot de passe de type md5 en paramètre
 def hash_md5(mdp):
@@ -63,7 +62,6 @@ async def create_user(user: Create):
         mdp = str((user.password))
         password_hashed = hash_md5(mdp)
 
-    age = from_dob_to_age(user.birthdaydate)
     secret_key = os.getenv("SECRET_KEY")
 
     payload = {
@@ -81,7 +79,7 @@ async def create_user(user: Create):
                 WHERE email = :email
             """)
     values = {
-        "email": user.email,
+        "email": user.email
     }
     with engine.begin() as conn:
         result = conn.execute(query, values)
@@ -89,7 +87,7 @@ async def create_user(user: Create):
 
     # Check if the email exists in the database
     if existing_email:
-        return {"An account already exists with this email"}
+        raise HTTPException(status_code=409, detail="An account already exists with this email")
     else:
         # sauvegarde l'utilisateur dans la base de données
         query = text("""
@@ -118,3 +116,37 @@ async def create_user(user: Create):
             result = conn.execute(query)
             return result
 
+# Endpoint : /connect
+# Type : POST
+# this endpoint connect to a user"
+@router.post("/connect/")
+async def connect(user: GetUser):
+    query = text("""
+                SELECT email, password FROM "Users"
+                WHERE email = :email AND password = :password
+            """)
+
+    values = {
+        "email": user.email,
+        "password": hash_md5(str(user.password))
+    }
+    with engine.begin() as conn:
+        result = conn.execute(query, values)
+        existing_email_password = result.fetchone()
+    if existing_email_password:
+        # Si l'utilisateur existe je renvoye une réponse HTTP 200 OK
+        query = text("""
+                SELECT token FROM "Users"
+                WHERE email = :email
+            """)
+
+        values = {
+            "token": user.token,
+        }
+        with engine.begin() as conn:
+            result = conn.execute(query)
+            user_token = result.fetchone()
+        return {"Connexion réussie": user_token}
+    else:
+        # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
+        raise HTTPException(status_code=401, detail="Identifiants incorrects")

@@ -54,6 +54,11 @@ class UpdatePassword(BaseModel):
     email : str
     password : str
 
+class GetUser(BaseModel):
+    email : str
+    password : str
+
+
 class UploadProfilePicture(BaseModel):
     email : str
     password : str
