@@ -1,8 +1,7 @@
 pip3 install -r requirements.txt --break-system-packages
-
-psql
-createuser jawa with password '123'
 brew services start postgresql
-createdb ProtoRH -U jawa
-psql -U jawa --password -d ProtoRH
+createdb protorh -U app
+psql -d protorh -f database_rh.psql
+#psql -U app --password -d protorh -f database_rh.psql
 brew services stop postgresql
+
