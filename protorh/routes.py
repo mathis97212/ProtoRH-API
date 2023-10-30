@@ -122,31 +122,27 @@ async def create_user(user: Create):
 @router.post("/connect/")
 async def connect(user: GetUser):
     query = text("""
-                SELECT email, password FROM "Users"
-                WHERE email = :email AND password = :password
-            """)
+        SELECT token FROM "Users"
+        WHERE email = :email AND password = :password
+    """)
 
     values = {
         "email": user.email,
         "password": hash_md5(str(user.password))
     }
+
     with engine.begin() as conn:
         result = conn.execute(query, values)
-        existing_email_password = result.fetchone()
-    if existing_email_password:
-        # Si l'utilisateur existe je renvoye une réponse HTTP 200 OK
-        query = text("""
-                SELECT token FROM "Users"
-                WHERE email = :email
-            """)
+        user_values = result.fetchone()
 
-        values = {
-            "token": user.token,
-        }
-        with engine.begin() as conn:
-            result = conn.execute(query)
-            user_token = result.fetchone()
-        return {"Connexion réussie": user_token}
+    if user_values:
+        # Si l'utilisateur existe
+        token = user_values[0] 
+        return {"Connexion réussie": token}
     else:
-        # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
+        # Sinon si l'utilisateur n'existe pas je renvoie une réponse HTTP 401
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
+    
+
+
+
