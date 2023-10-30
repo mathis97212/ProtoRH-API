@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from fastapi import FastAPI
 from datetime import date
 
+app = FastAPI()
 Base = declarative_base()
 
 class Department(Base):
