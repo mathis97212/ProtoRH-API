@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 from fastapi import FastAPI
 from datetime import date
 
@@ -54,9 +54,19 @@ class UpdatePassword(BaseModel):
     email : str
     password : str
 
+class UserConnect(BaseModel):
+    email : str
+    password : str
+
 class GetUser(BaseModel):
     email : str
     password : str
+    firstname : str
+    lastname : str
+    birthdaydate : date
+    address : str
+    postalcode : str
+    age : int
 
 
 class UploadProfilePicture(BaseModel):

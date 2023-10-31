@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
-from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture
+from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
 import datetime
 import hashlib
 import jwt
@@ -20,7 +20,6 @@ engine = get_db()
 router = APIRouter()
 
 salt = os.getenv("SALT")
-print(salt)
 
 # fonction permettant de hasher un mot de passe de type md5 en paramètre
 def hash_md5(mdp):
@@ -62,17 +61,6 @@ async def create_user(user: Create):
         mdp = str((user.password))
         password_hashed = hash_md5(mdp)
 
-    secret_key = os.getenv("SECRET_KEY")
-
-    payload = {
-        "email": user.email,
-        "firstname": user.firstname,
-        "lastname": user.lastname
-    }
-
-    secret_key = str(secret_key)
-    token = jwt.encode(payload, secret_key, algorithm="HS256")+salt
-
     # vérifie si un compte n'existe pas déjà avec cet email
     query = text("""
                 SELECT email FROM "Users"
@@ -107,7 +95,7 @@ async def create_user(user: Create):
             age=from_dob_to_age(user.birthdaydate),
             meta=json.dumps({}),
             registrationdate=datetime.date.today(),
-            token=hash_djb2(token),
+            token="",
             role="user",
             departements=None
         )
@@ -120,9 +108,9 @@ async def create_user(user: Create):
 # Type : POST
 # this endpoint connect to a user"
 @router.post("/connect/")
-async def connect(user: GetUser):
+async def connect(user: UserConnect):
     query = text("""
-        SELECT token FROM "Users"
+        SELECT email, firstname, lastname FROM "Users"
         WHERE email = :email AND password = :password
     """)
 
@@ -134,15 +122,23 @@ async def connect(user: GetUser):
     with engine.begin() as conn:
         result = conn.execute(query, values)
         user_values = result.fetchone()
-
+        
     if user_values:
         # Si l'utilisateur existe
-        token = user_values[0] 
+        email, firstname, lastname = user_values
+        payload = {
+            "email": email,
+            "firstname": firstname,
+            "lastname": lastname
+        }
+    
+        secret_key = os.getenv("SECRET_KEY")
+        secret_key = str(secret_key)
+        token_unhashed = jwt.encode(payload, secret_key, algorithm="HS256")+salt
+        token = hash_djb2(token_unhashed)
+
         return {"Connexion réussie": token}
     else:
-        # Sinon si l'utilisateur n'existe pas je renvoie une réponse HTTP 401
+        # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
     
-
-
-
