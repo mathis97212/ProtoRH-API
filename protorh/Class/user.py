@@ -1,11 +1,6 @@
-import subprocess, uvicorn
-import os
 from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel, Json
-from fastapi import FastAPI
 from datetime import date
 
 Base = declarative_base()
