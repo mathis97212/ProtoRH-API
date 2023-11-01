@@ -40,7 +40,7 @@ def from_dob_to_age(born):
     today = datetime.date.today()
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
-#--------------------------------------User-----------------------------------#
+#--------------------------------------User-------------------------------------#
 
 # Endpoint : /
 # Type : GET
@@ -193,7 +193,7 @@ router.get("/picture/user/{user_id}")
 async def picture_user():
     pass
 
-#--------------------------------------Departement-----------------------------------#
+#--------------------------------------Departement-------------------------------------#
 
 # Endpoint : /departements/{id_departement}/users/add
 # Type : POST
@@ -216,4 +216,56 @@ router.get("/departements/{id_departement}/users")
 async def remove_user():
     pass
 
-#--------------------------------------RequestRH-----------------------------------#
+#--------------------------------------RequestRH-------------------------------------#
+
+# Endpoint : /rh/msg/add
+# Type : POST
+# this endpoint create an RH request
+router.post("/rh/msg/add")
+async def create_request():
+    pass
+
+# Endpoint : /rh/msg/remove
+# Type : POST
+# this endpoint remove an RH request
+router.post("/rh/msg/remove")
+async def remove_request():
+    pass
+
+# Endpoint : /rh/msg/update
+# Type : POST
+# this endpoint update an RH request
+router.post("/rh/msg/update")
+async def update_request():
+    pass
+
+# Endpoint : /rh/msg
+# Type : GET
+# this endpoint retrieves HR requests
+router.get("/rh/msg")
+async def retrieval_request():
+    pass
+
+#--------------------------------------Event-------------------------------------#
+
+# Endpoint : /event/add
+# Type : POST
+# this endpoint add an evenement
+router.post("/event/add")
+async def add_event():
+    pass
+
+# Endpoint : /event/add
+# Type : GET
+# this endpoint retrievies event(s)
+router.get("/event")
+async def retrievial_event():
+    pass
+
+# Endpoint : /event/remove
+# Type : POST
+# this endpoint remove an event
+router.get("event/remove")
+async def remove_event():
+    pass
+
