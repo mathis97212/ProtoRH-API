@@ -92,10 +92,10 @@ async def read_root():
 async def create_user(user: Create):
     # vérifie que le mot de passe repeat correspond bien au mot de passe sinon je retourne une erreur
     if user.password != user.password_repeat:
-        return {"Please make sure to enter the same password"}
+        return {"error": "Please make sure to enter the same password"}
     # vérifie sur le code postale est bien égale à 5
     elif not user.postalcode.isdigit() and len(user.postalcode) != 5:
-        return {"Code postale invalide"}
+        return {"error": "Invalide postalcode"}
     else:
         mdp = str((user.password))
         password_hashed = hash_md5(mdp)
@@ -189,10 +189,10 @@ async def connect(user: UserConnect):
         with engine.begin() as conn:
             result = conn.execute(query)
 
-        return {"Connexion réussie": token_hashed}
+        return {"Successful connection": token_hashed}
     else:
         # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
-        raise HTTPException(status_code=401, detail="Identifiants incorrects")
+        raise HTTPException(status_code=401, detail="incorrect credentials")
 
 # Endpoint : /user/{id_user}
 # Type : GET
@@ -269,7 +269,7 @@ async def update_user(user: Update):
             result = conn.execute(query, values)
             user_values = result.fetchone()
     if user_values:
-        return {"Update successfull"}
+        return {"Successful update"}
     else:
         HTTPException(status_code=401, detail="Update failed")
 
@@ -280,34 +280,32 @@ router.post("/user/password")
 async def password_user(user : UpdatePassword):
 
     query = text("""
-                SELECT email, password FROM "Users"
+                SELECT password FROM "Users"
                 WHERE email = :email
                 """)
-    values = query.bindparams(
-        "email": user.email,
-        "password": user.password
-        )
+    values = {"email": user.email}
     with engine.begin() as conn:
             result = conn.execute(query, values)
-            existing_email_password = result.fetchone() 
+            existing_password = result.fetchone() 
 
-    if existing_email_password:
-        if user.new_password != user.new_password_repeat:
-            return {"Please make sure to enter the same password"} 
+    if existing_password:
+        if hash_md5(user.password) == existing_password: 
+            if user.new_password != user.new_password_repeat:
+                return {"Please make sure to enter the same password"} 
+            else:
+                query = text("""
+                            UPDATE "Users"
+                            SET password = :password
+                            WHERE email = :email
+                            """)
+                values = query.bindparams(
+                    password = hash_md5(user.new_password)
+                    )
+                with engine.begin() as conn:
+                        result = conn.execute(query, values)
+                        existing_email_password = result.fetchone()
         else:
-            query = text("""
-                        INSERT INTO "Users" (password)
-                        VALUES (password = :password)
-                        WHERE email = :email
-                        """)
-            values = query.bindparams(
-                password = user.new_password
-                )
-            with engine.begin() as conn:
-                    result = conn.execute(query, values)
-                    existing_email_password = result.fetchone()
-    else:
-        return {"Email or password dosen't exist"}
+            return {"error": "User email not found"}
     
 
 # Endpoint : /upload/picture/user/{user_id}
