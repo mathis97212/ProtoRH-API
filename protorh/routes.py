@@ -49,16 +49,26 @@ def from_dob_to_age(born):
 secret_key = os.getenv("SECRET_KEY")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-from database import SessionLocal
-SessionLocal = SessionLocal()
-con = SessionLocal
 # Fonction pour valider le token JWT
 def valide_token(token: str = Depends(oauth2_scheme)):
     try:
-        user = con.query(User).filter(User.token == token).first()
-        if user:
+        query = text("""
+                    SELECT id FROM "Users"
+                    WHERE token = :token
+                    """)
+        query = query.bindparams(
+            token=token
+        )
+
+        with engine.begin() as conn:
+            result = conn.execute(query)
+            user_id = result.scalar()
+
+        if user_id:
+            # si le token à été trouvé je décode le payload
             payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-            return user
+            return user_id
+        # sinon je lui affiche l'erreur associée
         else:
             raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
     except jwt.ExpiredSignatureError:
@@ -191,31 +201,29 @@ async def connect(user: UserConnect):
 async def info_user(user: GetUser, authorized_user: User = Depends(valide_token)):
     if authorized_user.role == "admin":
         query = text("""
-                     SELECT id, name, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements
-                     FROM "Users"
+                     SELECT id, name, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements FROM "Users"
                      WHERE id = :id
                      """)
     else:
         query = text("""
-                     SELECT id, name, email, lastname, firstname, age, registrationdate, role, departements
-                     FROM "Users"
+                     SELECT id, name, email, lastname, firstname, age, registrationdate, role, departements FROM "Users"
                      WHERE id = :id
                      """)
     query = query.bindparams(
         id=user.id,
-        name, 
-        email, 
-        lastname, 
-        firstname, 
-        birthdaydate, 
-        address, 
-        postalcode, 
-        age, 
-        meta, 
-        registrationdate, 
-        token, 
-        role, 
-        departements
+        name=user.name, 
+        email=user.email, 
+        lastname=user.lastname, 
+        firstname=user.firstname, 
+        birthdaydate=user.birthdaydate, 
+        address=user.address, 
+        postalcode=user.postalcode, 
+        age=user.age, 
+        meta=user.meta, 
+        registrationdate=user.registrationdate, 
+        token=user.token, 
+        role=user.role, 
+        departements=user.departements
         )
     with engine.begin() as conn:
             result = conn.execute(query)

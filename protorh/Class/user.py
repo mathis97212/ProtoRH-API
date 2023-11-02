@@ -63,11 +63,11 @@ class GetUser(BaseModel):
     address : str
     postalcode : str
     age : int
-    meta = str
-    registrationdate = date
-    token = str
-    role = str
-    departements = int
+    meta : str
+    registrationdate : date
+    token : str
+    role : str
+    departements : int
 
 
 class UploadProfilePicture(BaseModel):
