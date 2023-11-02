@@ -54,6 +54,7 @@ class UserConnect(BaseModel):
     password : str
 
 class GetUser(BaseModel):
+    id : int
     email : str
     password : str
     firstname : str
@@ -62,6 +63,11 @@ class GetUser(BaseModel):
     address : str
     postalcode : str
     age : int
+    meta = str
+    registrationdate = date
+    token = str
+    role = str
+    departements = int
 
 
 class UploadProfilePicture(BaseModel):

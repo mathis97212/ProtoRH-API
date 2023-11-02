@@ -1,7 +1,7 @@
 import json
 from flask import session
 import os
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from sqlalchemy import text, JSON, URL
 
 from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
@@ -15,6 +15,12 @@ import jwt
 from curses.ascii import isdigit
 from fastapi import APIRouter
 from database import get_db
+from fastapi.security import OAuth2PasswordBearer
+
+from functools import wraps
+from flask import Flask, request, jsonify
+
+
 
 engine = get_db()
 router = APIRouter()
@@ -39,6 +45,26 @@ def hash_djb2(s):
 def from_dob_to_age(born):
     today = datetime.date.today()
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+secret_key = os.getenv("SECRET_KEY")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+from database import SessionLocal
+SessionLocal = SessionLocal()
+con = SessionLocal
+# Fonction pour valider le token JWT
+def valide_token(token: str = Depends(oauth2_scheme)):
+    try:
+        user = con.query(User).filter(User.token == token).first()
+        if user:
+            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+            return user
+        else:
+            raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expiré")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token invalide")
 
 #--------------------------------------User-------------------------------------#
 
@@ -157,19 +183,50 @@ async def connect(user: UserConnect):
     else:
         # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
-    
+
 # Endpoint : /user/{id_user}
 # Type : GET
-# this endpoint give information about a user  
+# this endpoint give information about a user
 @router.get("/user/{id_user}")
-async def info_user(user: GetUser):
-    pass
+async def info_user(user: GetUser, authorized_user: User = Depends(valide_token)):
+    if authorized_user.role == "admin":
+        query = text("""
+                     SELECT id, name, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements
+                     FROM "Users"
+                     WHERE id = :id
+                     """)
+    else:
+        query = text("""
+                     SELECT id, name, email, lastname, firstname, age, registrationdate, role, departements
+                     FROM "Users"
+                     WHERE id = :id
+                     """)
+    query = query.bindparams(
+        id=user.id,
+        name, 
+        email, 
+        lastname, 
+        firstname, 
+        birthdaydate, 
+        address, 
+        postalcode, 
+        age, 
+        meta, 
+        registrationdate, 
+        token, 
+        role, 
+        departements
+        )
+    with engine.begin() as conn:
+            result = conn.execute(query)
+            return result
+
 
 # Endpoint : /user/update
 # Type : POST
 # this endpoint update user informations
 router.post("/user/update")
-async def update_user():
+async def update_user(Update):
     pass
 
 # Endpoint : /user/password
