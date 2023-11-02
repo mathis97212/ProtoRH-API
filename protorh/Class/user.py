@@ -36,6 +36,8 @@ class Create(BaseModel):
     postalcode : str
 
 class Update(BaseModel):
+    id : int
+    name : str
     email : str
     password : str
     firstname : str
@@ -44,6 +46,11 @@ class Update(BaseModel):
     address : str
     postalcode : str
     age : int
+    meta : str
+    registrationdate : date
+    token : str
+    role : str
+    departements : int
 
 class UpdatePassword(BaseModel):
     email : str
@@ -55,6 +62,7 @@ class UserConnect(BaseModel):
 
 class GetUser(BaseModel):
     id : int
+    name : str
     email : str
     password : str
     firstname : str

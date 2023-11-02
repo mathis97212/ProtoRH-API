@@ -62,19 +62,19 @@ def valide_token(token: str = Depends(oauth2_scheme)):
 
         with engine.begin() as conn:
             result = conn.execute(query)
-            user_id = result.scalar()
+            user_token = result.scalar()
 
-        if user_id:
+        if user_token:
             # si le token à été trouvé je décode le payload
             payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-            return user_id
+            return user_token
         # sinon je lui affiche l'erreur associée
         else:
-            raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
+            raise HTTPException(status_code=404, detail="User not found")
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expiré")
+        raise HTTPException(status_code=401, detail="Expired token")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token invalide")
+        raise HTTPException(status_code=401, detail="Invalide token")
 
 #--------------------------------------User-------------------------------------#
 
@@ -199,7 +199,7 @@ async def connect(user: UserConnect):
 # this endpoint give information about a user
 @router.get("/user/{id_user}")
 async def info_user(user: GetUser, authorized_user: User = Depends(valide_token)):
-    if authorized_user.role == "admin":
+    if user.role == "admin":
         query = text("""
                      SELECT id, name, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements FROM "Users"
                      WHERE id = :id
@@ -227,22 +227,88 @@ async def info_user(user: GetUser, authorized_user: User = Depends(valide_token)
         )
     with engine.begin() as conn:
             result = conn.execute(query)
-            return result
+            user_values = result.fetchone()
+    for value in user_values:
+        return {value}
 
 
 # Endpoint : /user/update
 # Type : POST
 # this endpoint update user informations
 router.post("/user/update")
-async def update_user(Update):
-    pass
+async def update_user(user: Update):
+    if user.role == "admin":
+        query = text("""
+                    UPDATE "Users"
+                    SET name = :name, email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
+                    WHERE id = :id 
+                     """)
+    else:
+        query = text("""
+                    UPDATE "Users"
+                    SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
+                    WHERE id = :id
+                     """)
+    values = query.bindparams(
+        id=user.id,
+        name=user.name, 
+        email=user.email, 
+        lastname=user.lastname, 
+        firstname=user.firstname, 
+        birthdaydate=user.birthdaydate, 
+        address=user.address, 
+        postalcode=user.postalcode, 
+        age=user.age, 
+        meta=user.meta, 
+        registrationdate=user.registrationdate, 
+        token=user.token, 
+        role=user.role, 
+        departements=user.departements
+        )
+    with engine.begin() as conn:
+            result = conn.execute(query, values)
+            user_values = result.fetchone()
+    if user_values:
+        return {"Update successfull"}
+    else:
+        HTTPException(status_code=401, detail="Update failed")
 
 # Endpoint : /user/password
 # Type : POST
 # this endpoint update the user password
 router.post("/user/password")
-async def password_user():
-    pass
+async def password_user(user : UpdatePassword):
+
+    query = text("""
+                SELECT email, password FROM "Users"
+                WHERE email = :email
+                """)
+    values = query.bindparams(
+        "email": user.email,
+        "password": user.password
+        )
+    with engine.begin() as conn:
+            result = conn.execute(query, values)
+            existing_email_password = result.fetchone() 
+
+    if existing_email_password:
+        if user.new_password != user.new_password_repeat:
+            return {"Please make sure to enter the same password"} 
+        else:
+            query = text("""
+                        INSERT INTO "Users" (password)
+                        VALUES (password = :password)
+                        WHERE email = :email
+                        """)
+            values = query.bindparams(
+                password = user.new_password
+                )
+            with engine.begin() as conn:
+                    result = conn.execute(query, values)
+                    existing_email_password = result.fetchone()
+    else:
+        return {"Email or password dosen't exist"}
+    
 
 # Endpoint : /upload/picture/user/{user_id}
 # Type : POST
