@@ -1,0 +1,21 @@
+#Récapitulatif du Travail fait sur le Projet Protorh
+
+#Date: 02/11/2023
+#Auteur: Abdelghani saidi (saidi_a)
+
+#Ce document récapitule le travail effectué dans le projet Protorh jusqu'à présent, y compris les modifications apportées au fichier `main.py`, l'ajout des endpoints dans les fichiers `user.py` et `requestrh.py`, les problèmes résolus et les prochaines étapes à suivre.
+#Dans les fichiers user.py et requestrh.py, 
+#les endpoints nécessaires ont été ajoutés en suivant les spécifications du projet. 
+#Ces endpoints permettent de gérer les utilisateurs, 
+#les demandes RH et d'autres fonctionnalités liées au projet.
+
+#I. Modifications dans le fichier `main.py`
+
+#Les modifications qui ont été éffectué dans fichier `main.py` :
+#Correction des erreurs d'indentation : L'indentation incorrecte sera corrigée pour s'assurer que le code est propre et lisible.
+
+#Finalisation des commentaires : Les commentaires seront rédigés pour expliquer le fonctionnement de chaque partie du code, ce qui facilitera la compréhension et la maintenance.
+
+#Tests et débogage : Des tests seront effectués pour s'assurer que l'application fonctionne correctement. Toute erreur ou comportement inattendu sera débogué.
+
+#Intégration de l'authentification JWT : L'authentification JWT sera mise en place pour sécuriser l'accès aux endpoints et vérifier les droits des utilisateurs.
