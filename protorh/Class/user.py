@@ -55,6 +55,8 @@ class Update(BaseModel):
 class UpdatePassword(BaseModel):
     email : str
     password : str
+    new_password : str
+    new_password_repeat : str
 
 class UserConnect(BaseModel):
     email : str
@@ -79,11 +81,5 @@ class GetUser(BaseModel):
 
 
 class UploadProfilePicture(BaseModel):
-    email : str
-    password : str
-    firstname : str
-    lastname : str
-    birthdaydate : date
-    address : str
-    postalcode : str
-    age : int
+    id : int
+    token : str

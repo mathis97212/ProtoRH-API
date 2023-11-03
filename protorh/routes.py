@@ -1,8 +1,9 @@
 import json
 from flask import session
 import os
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Path, Form, File, UploadFile
 from sqlalchemy import text, JSON, URL
+from PIL import Image
 
 from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
 from Class.departement import Department, AddUserToDepartment, RemoveUserFromDepartment, GetUsersInDepartment
@@ -249,7 +250,7 @@ async def update_user(user: Update):
                     SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
                     WHERE id = :id
                      """)
-    values = query.bindparams(
+    query = query.bindparams(
         id=user.id,
         name=user.name, 
         email=user.email, 
@@ -266,7 +267,7 @@ async def update_user(user: Update):
         departements=user.departements
         )
     with engine.begin() as conn:
-            result = conn.execute(query, values)
+            result = conn.execute(query)
             user_values = result.fetchone()
     if user_values:
         return {"Successful update"}
@@ -298,11 +299,11 @@ async def password_user(user : UpdatePassword):
                             SET password = :password
                             WHERE email = :email
                             """)
-                values = query.bindparams(
+                query = query.bindparams(
                     password = hash_md5(user.new_password)
                     )
                 with engine.begin() as conn:
-                        result = conn.execute(query, values)
+                        result = conn.execute(query)
                         existing_email_password = result.fetchone()
         else:
             return {"error": "User email not found"}
@@ -312,14 +313,46 @@ async def password_user(user : UpdatePassword):
 # Type : POST
 # this endpoint upload a picture
 router.post("/upload/picture/user/{user_id}")
-async def upload_picture_user(user: UploadProfilePicture):
+async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = File(...)):
+
     query = text("""
-                SELECT id FROM "Users"
+                SELECT token FROM "Users"
                 WHERE id = :id
                  """)
-    values = {"id" : user.id}
+    
+    values = {
+            "id" : user.id
+            }
+
     with engine.begin as conn:
         result = conn.execute(query, values)
+        existing_token = result.fetchone()
+    
+    if existing_token:
+        # Vérification de la taille et du format de l'image.
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif'}
+        
+        if image.content_type.split('/')[1] in allowed_extensions:
+            img = Image.open(image.file)
+            largeur, hauteur = img.size
+
+            if largeur <= 800 and hauteur <= 800:
+                file_extension = image.filename.split('.')[-1]
+                file_name = f"{existing_token}.{file_extension}"
+                file_path = f"assets/picture/profiles/{file_name}"
+
+                with open(file_path, 'wb') as f:
+                    f.write(image.file.read())
+
+                return {"Image uploaded successfully."}
+            else:
+                return {type: "upload_error", "error": "Image size exceeds the limit (800x800)."}
+        else:
+            return {type: "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
+    else:
+        return {type: "user_error", "error": "User not found"}
+        
+    
 
 # Endpoint : /picture/user/{user_id}
 # Type : get
