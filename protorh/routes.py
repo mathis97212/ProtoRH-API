@@ -310,10 +310,16 @@ async def password_user(user : UpdatePassword):
 
 # Endpoint : /upload/picture/user/{user_id}
 # Type : POST
-# this endpoint update user informations
+# this endpoint upload a picture
 router.post("/upload/picture/user/{user_id}")
-async def upload_picture_user():
-    pass
+async def upload_picture_user(user: UploadProfilePicture):
+    query = text("""
+                SELECT id FROM "Users"
+                WHERE id = :id
+                 """)
+    values = {"id" : user.id}
+    with engine.begin as conn:
+        result = conn.execute(query, values)
 
 # Endpoint : /picture/user/{user_id}
 # Type : get
