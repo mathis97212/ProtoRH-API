@@ -209,10 +209,29 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
             result = conn.execute(query, values)
             user_values = result.fetchone()
 
-    if user_values[11] == 'admin':
-        return {user_values[0], user_values[1], user_values[2], user_values[5], user_values[6], user_values[7], user_values[8], user_values[9], user_values[10], user_values[11], user_values[12], user_values[13], user_values[14], user_values[15]}
+    if user_values:
+        if user_values[11] == 'admin':
+            response = {
+                "id": user_values[0],
+                "email": user_values[1],
+                "lastname": user_values[2],
+                "address": user_values[5],
+                "postalcode": user_values[6],
+                "role": user_values[11],
+                "departements": user_values[12]
+            }
+        else:
+            response = {
+                "id": user_values[0],
+                "email": user_values[1],
+                "lastname": user_values[2],
+                "address": user_values[5],
+                "postalcode": user_values[6],
+                "role": user_values[11]
+            }
+        return response
     else:
-        return {user_values[0], user_values[1], user_values[2], user_values[5], user_values[6], user_values[10], user_values[12], user_values[14], user_values[15]}
+        return HTTPException(status_code=404, detail="User not found")
                 
 # Endpoint : /user/update
 # Type : POST
