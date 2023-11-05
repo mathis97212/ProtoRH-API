@@ -34,6 +34,7 @@ class Create(BaseModel):
     birthdaydate : date
     address : str
     postalcode : str
+    role : str = "user"
 
 class Update(BaseModel):
     id : int
@@ -63,22 +64,7 @@ class UserConnect(BaseModel):
     password : str
 
 class GetUser(BaseModel):
-    id : int
-    name : str
-    email : str
-    password : str
-    firstname : str
-    lastname : str
-    birthdaydate : date
-    address : str
-    postalcode : str
-    age : int
-    meta : str
-    registrationdate : date
-    token : str
-    role : str
-    departements : int
-
+    firstname: str
 
 class UploadProfilePicture(BaseModel):
     id : int

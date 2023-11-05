@@ -13,6 +13,7 @@ from Class.event import Event, CreateEvent, GetEvent, RemoveEvent
 import datetime
 import hashlib
 import jwt
+from env import getenv
 from curses.ascii import isdigit
 from fastapi import APIRouter
 from database import get_db
@@ -53,29 +54,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Fonction pour valider le token JWT
 def valide_token(token: str = Depends(oauth2_scheme)):
     try:
-        query = text("""
-                    SELECT id FROM "Users"
-                    WHERE token = :token
-                    """)
-        query = query.bindparams(
-            token=token
+        print(token)
+        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token expiré"
+        )
+    except jwt.DecodeError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token invalide"
         )
 
-        with engine.begin() as conn:
-            result = conn.execute(query)
-            user_token = result.scalar()
-
-        if user_token:
-            # si le token à été trouvé je décode le payload
-            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-            return user_token
-        # sinon je lui affiche l'erreur associée
-        else:
-            raise HTTPException(status_code=404, detail="User not found")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Expired token")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalide token")
+    return True
 
 #--------------------------------------User-------------------------------------#
 
@@ -89,14 +81,14 @@ async def read_root():
 # Endpoint : /user/create
 # Type : POST
 # this endpoint create a user
-@router.post("/user/create/")
+@router.post("/user/create/", status_code=201)
 async def create_user(user: Create):
     # vérifie que le mot de passe repeat correspond bien au mot de passe sinon je retourne une erreur
     if user.password != user.password_repeat:
-        return {"error": "Please make sure to enter the same password"}
+        return HTTPException(400, {"error": "Please make sure to enter the same password"})
     # vérifie sur le code postale est bien égale à 5
     elif not user.postalcode.isdigit() and len(user.postalcode) != 5:
-        return {"error": "Invalide postalcode"}
+        return HTTPException(400, {"error": "Invalid postalcode"})
     else:
         mdp = str((user.password))
         password_hashed = hash_md5(mdp)
@@ -117,6 +109,13 @@ async def create_user(user: Create):
     if existing_email:
         raise HTTPException(status_code=409, detail="An account already exists with this email")
     else:
+        payload = {
+            "email": user.email,
+            "firstname": user.firstname,
+            "lastname": user.lastname
+        }
+        
+       
         # sauvegarde l'utilisateur dans la base de données
         query = text("""
             INSERT INTO "Users" (email, password, password_repeat, firstname, lastname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements) 
@@ -135,14 +134,14 @@ async def create_user(user: Create):
             age=from_dob_to_age(user.birthdaydate),
             meta=json.dumps({}),
             registrationdate=datetime.date.today(),
-            token="",
-            role="user",
+            token=hash(payload+salt),
+            role=user.role,
             departements=None
         )
 
         with engine.begin() as conn:
             result = conn.execute(query)
-            return result
+            return {"User created"}
 
 # Endpoint : /connect
 # Type : POST
@@ -166,16 +165,17 @@ async def connect(user: UserConnect):
     if user_values:
         # Si l'utilisateur existe
         email, firstname, lastname = user_values
+
         payload = {
             "email": email,
             "firstname": firstname,
             "lastname": lastname
         }
     
-        secret_key = os.getenv("SECRET_KEY")
+        secret_key = getenv("SECRET_KEY")
         secret_key = str(secret_key)
-        token_unhashed = jwt.encode(payload, secret_key, algorithm="HS256")+salt
-        token_hashed = hash_djb2(token_unhashed)
+        token_unhashed = jwt.encode(payload, secret_key, algorithm="HS256")
+        token_hashed = (token_unhashed)
 
         query = text("""
                     UPDATE "Users"
@@ -195,40 +195,22 @@ async def connect(user: UserConnect):
         # Sinon si l'utilisateur n'existe pas je renvoye une réponse HTTP 401
         raise HTTPException(status_code=401, detail="incorrect credentials")
 
-# Endpoint : /user/{id_user}
+# Endpoint : /user/{id}
 # Type : GET
 # this endpoint give information about a user
 @router.get("/user/{id_user}")
-async def info_user(user: GetUser, authorized_user: User = Depends(valide_token)):
-    if user.role == "admin":
-        query = text("""
-                     SELECT id, name, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements FROM "Users"
+async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
+    query = text("""
+                     SELECT id, email, lastname, firstname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements FROM "Users"
                      WHERE id = :id
                      """)
-    else:
-        query = text("""
-                     SELECT id, name, email, lastname, firstname, age, registrationdate, role, departements FROM "Users"
-                     WHERE id = :id
-                     """)
-    query = query.bindparams(
-        id=user.id,
-        name=user.name, 
-        email=user.email, 
-        lastname=user.lastname, 
-        firstname=user.firstname, 
-        birthdaydate=user.birthdaydate, 
-        address=user.address, 
-        postalcode=user.postalcode, 
-        age=user.age, 
-        meta=user.meta, 
-        registrationdate=user.registrationdate, 
-        token=user.token, 
-        role=user.role, 
-        departements=user.departements
-        )
+    values = {
+            "id" : id_user
+    }
     with engine.begin() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query, values)
             user_values = result.fetchone()
+            print(user_values[11])
     for value in user_values:
         return {value}
 
@@ -330,7 +312,7 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
     
     if existing_token:
         # Vérification de la taille et du format de l'image.
-        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif'}
+        allowed_extensions = {'jpg','png', 'gif'}
         
         if image.content_type.split('/')[1] in allowed_extensions:
             img = Image.open(image.file)

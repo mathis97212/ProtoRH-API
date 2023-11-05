@@ -2,8 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
+from env import getenv
 
-url_object = "postgresql://app:123@localhost/protorh"
+url_object = f"postgresql://{getenv('DATABASE_USER')}:{getenv('DATABASE_PASSWORD')}@{getenv('DATABASE_HOST')}/{getenv('DATABASE_NAME')}"
 
 engine = create_engine(url_object)
 if not database_exists(engine.url):
