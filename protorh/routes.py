@@ -54,7 +54,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Fonction pour valider le token JWT
 def valide_token(token: str = Depends(oauth2_scheme)):
     try:
-        print(token)
         payload = jwt.decode(token, secret_key, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         raise HTTPException(
@@ -114,8 +113,7 @@ async def create_user(user: Create):
             "firstname": user.firstname,
             "lastname": user.lastname
         }
-        
-       
+
         # sauvegarde l'utilisateur dans la base de données
         query = text("""
             INSERT INTO "Users" (email, password, password_repeat, firstname, lastname, birthdaydate, address, postalcode, age, meta, registrationdate, token, role, departements) 
@@ -134,7 +132,7 @@ async def create_user(user: Create):
             age=from_dob_to_age(user.birthdaydate),
             meta=json.dumps({}),
             registrationdate=datetime.date.today(),
-            token=hash(payload+salt),
+            token="", #hash(payload+salt),
             role=user.role,
             departements=None
         )
@@ -210,11 +208,12 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
     with engine.begin() as conn:
             result = conn.execute(query, values)
             user_values = result.fetchone()
-            print(user_values[11])
-    for value in user_values:
-        return {value}
 
-
+    if user_values[11] == 'admin':
+        return {user_values[0], user_values[1], user_values[2], user_values[5], user_values[6], user_values[7], user_values[8], user_values[9], user_values[10], user_values[11], user_values[12], user_values[13], user_values[14], user_values[15]}
+    else:
+        return {user_values[0], user_values[1], user_values[2], user_values[5], user_values[6], user_values[10], user_values[12], user_values[14], user_values[15]}
+                
 # Endpoint : /user/update
 # Type : POST
 # this endpoint update user informations
