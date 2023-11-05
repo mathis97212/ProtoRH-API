@@ -208,26 +208,41 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
     with engine.begin() as conn:
             result = conn.execute(query, values)
             user_values = result.fetchone()
-
     if user_values:
+        print(user_values[2])
+        print(user_values[3])
+        print(user_values[4])
+        print(user_values[5])
+        print(user_values[6])
+        print(user_values[7])
+        print(user_values[12])
+        print(user_values[8])
+        print(user_values[9])
+        print(user_values[10])
         if user_values[11] == 'admin':
             response = {
                 "id": user_values[0],
                 "email": user_values[1],
+                "firstname": user_values[3],
                 "lastname": user_values[2],
+                "birthdaydate": user_values[4],
                 "address": user_values[5],
-                "postalcode": user_values[6],
+                "postalcode": user_values[8],
+                "age": user_values[7],
+                "meta": user_values[8],
                 "role": user_values[11],
+                "token": user_values[10],
                 "departements": user_values[12]
             }
         else:
             response = {
                 "id": user_values[0],
                 "email": user_values[1],
+                "firstname": user_values[3],
                 "lastname": user_values[2],
-                "address": user_values[5],
-                "postalcode": user_values[6],
-                "role": user_values[11]
+                "age": user_values[7],
+                "role": user_values[11],
+                "departements": user_values[12]
             }
         return response
     else:
