@@ -209,16 +209,6 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
             result = conn.execute(query, values)
             user_values = result.fetchone()
     if user_values:
-        print(user_values[2])
-        print(user_values[3])
-        print(user_values[4])
-        print(user_values[5])
-        print(user_values[6])
-        print(user_values[7])
-        print(user_values[12])
-        print(user_values[8])
-        print(user_values[9])
-        print(user_values[10])
         if user_values[11] == 'admin':
             response = {
                 "id": user_values[0],
@@ -313,13 +303,15 @@ async def password_user(user : UpdatePassword):
                 SELECT password FROM "Users"
                 WHERE email = :email
                 """)
-    values = {"email": user.email}
+    query = query.bindparams(
+        email=user.email
+    )
     with engine.begin() as conn:
-            result = conn.execute(query, values)
+            result = conn.execute(query)
             existing_password = result.fetchone() 
 
     if existing_password:
-        if hash_md5(user.password) == existing_password: 
+        if hash_md5(user.password) == existing_password[0]: 
             if user.new_password != user.new_password_repeat:
                 return {"Please make sure to enter the same password"} 
             else:
@@ -329,11 +321,11 @@ async def password_user(user : UpdatePassword):
                             WHERE email = :email
                             """)
                 query = query.bindparams(
-                    password = hash_md5(user.new_password)
+                    password = hash_md5(user.new_password),
+                    email = user.email
                     )
                 with engine.begin() as conn:
                         result = conn.execute(query)
-                        update_password = result.fetchone()
                 return {"Successful update": "User password updated successfully"}
         else:
             raise HTTPException(status_code=404, detail="User not found")
