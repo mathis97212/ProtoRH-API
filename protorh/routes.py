@@ -255,53 +255,38 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
 async def update_user(user: Update):
     if user.role == "admin":
         query = text("""
-                    UPDATE "Users"
-                    SET email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
-                    WHERE id = :id 
-                     """)
-        query = query.bindparams(
-            id=user.id,
-            name=user.name, 
-            email=user.email, 
-            lastname=user.lastname, 
-            firstname=user.firstname, 
-            birthdaydate=user.birthdaydate, 
-            address=user.address, 
-            postalcode=user.postalcode, 
-            age=user.age, 
-            meta=user.meta, 
-            registrationdate=user.registrationdate, 
-            token=user.token, 
-            role=user.role, 
-            departements=user.departements
-        )
+            UPDATE "Users"
+            SET email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
+            WHERE id = :id
+        """)
     else:
         query = text("""
-                    UPDATE "Users"
-                    SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
-                    WHERE id = :id
-                     """)
-        query = query.bindparams(
-            id=user.id,
-            name=user.name, 
-            email=user.email, 
-            birthdaydate=user.birthdaydate, 
-            address=user.address, 
-            postalcode=user.postalcode, 
-            age=user.age, 
-            meta=user.meta, 
-            registrationdate=user.registrationdate, 
-            token=user.token, 
-            departements=user.departements
-        )
+            UPDATE "Users"
+            SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
+            WHERE id = :id
+        """)
+
+    query = query.bindparams(
+        id=user.id,
+        email=user.email,
+        lastname=user.lastname,
+        firstname=user.firstname,
+        birthdaydate=user.birthdaydate,
+        address=user.address,
+        postalcode=user.postalcode,
+        age=user.age,
+        meta=user.meta,
+        registrationdate=user.registrationdate,
+        role=user.role,
+        departements=user.departements
+    )
     with engine.begin() as conn:
-            result = conn.execute(query)
-            user_values = result.fetchone()
-            print(user_values)
-    if user_values:
-        return {"Successful update":user_values}
+        result = conn.execute(query)
+
+    if result:
+        return {"Successful update": "User information updated successfully"}
     else:
-        HTTPException(status_code=401, detail="Update failed")
+        raise HTTPException(status_code=401, detail="Update failed")
 
 # Endpoint : /user/password
 # Type : POST
