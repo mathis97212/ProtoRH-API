@@ -37,7 +37,6 @@ class Create(BaseModel):
 
 class Update(BaseModel):
     id : int
-    name : str
     email : str
     firstname : str
     lastname : str

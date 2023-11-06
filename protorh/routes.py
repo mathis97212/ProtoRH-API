@@ -209,16 +209,6 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
             result = conn.execute(query, values)
             user_values = result.fetchone()
     if user_values:
-        print(user_values[2])
-        print(user_values[3])
-        print(user_values[4])
-        print(user_values[5])
-        print(user_values[6])
-        print(user_values[7])
-        print(user_values[12])
-        print(user_values[8])
-        print(user_values[9])
-        print(user_values[10])
         if user_values[11] == 'admin':
             response = {
                 "id": user_values[0],
@@ -246,68 +236,84 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
             }
         return response
     else:
-        return HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
                 
 # Endpoint : /user/update
 # Type : POST
 # this endpoint update user informations
-router.post("/user/update")
+@router.post("/user/update")
 async def update_user(user: Update):
-    if user.role == "admin":
+    query = text("""
+                SELECT id FROM "Users"
+                WHERE id = :id
+                """)
+    query = query.bindparams(
+        id=user.id
+    )
+    with engine.begin() as conn:
+        result = conn.execute(query)
+        existing_id = result.fetchone()
+        print(existing_id)
+
+    if existing_id is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    elif user.role == "admin":
         query = text("""
-                    UPDATE "Users"
-                    SET name = :name, email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
-                    WHERE id = :id 
-                     """)
+            UPDATE "Users"
+            SET email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
+            WHERE id = :id
+        """)
     else:
         query = text("""
-                    UPDATE "Users"
-                    SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
-                    WHERE id = :id
-                     """)
+            UPDATE "Users"
+            SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
+            WHERE id = :id
+        """)
+
     query = query.bindparams(
         id=user.id,
-        name=user.name, 
-        email=user.email, 
-        lastname=user.lastname, 
-        firstname=user.firstname, 
-        birthdaydate=user.birthdaydate, 
-        address=user.address, 
-        postalcode=user.postalcode, 
-        age=user.age, 
-        meta=user.meta, 
-        registrationdate=user.registrationdate, 
-        token=user.token, 
-        role=user.role, 
+        email=user.email,
+        lastname=user.lastname,
+        firstname=user.firstname,
+        birthdaydate=user.birthdaydate,
+        address=user.address,
+        postalcode=user.postalcode,
+        age=user.age,
+        meta=user.meta,
+        registrationdate=user.registrationdate,
+        role=user.role,
         departements=user.departements
-        )
+    )
     with engine.begin() as conn:
-            result = conn.execute(query)
-            user_values = result.fetchone()
-    if user_values:
-        return {"Successful update"}
+        result = conn.execute(query)
+
+    if result.rowcount > 0:
+        return {"Successful update": "User information updated successfully"}
     else:
-        HTTPException(status_code=401, detail="Update failed")
+        raise HTTPException(status_code=401, detail="Update failed")
 
 # Endpoint : /user/password
 # Type : POST
 # this endpoint update the user password
-router.post("/user/password")
+@router.post("/user/password")
 async def password_user(user : UpdatePassword):
 
     query = text("""
                 SELECT password FROM "Users"
                 WHERE email = :email
                 """)
-    values = {"email": user.email}
+    query = query.bindparams(
+        email=user.email
+    )
     with engine.begin() as conn:
-            result = conn.execute(query, values)
+            result = conn.execute(query)
             existing_password = result.fetchone() 
 
     if existing_password:
-        if hash_md5(user.password) == existing_password: 
+        if hash_md5(user.password) == existing_password[0]: 
             if user.new_password != user.new_password_repeat:
-                return {"Please make sure to enter the same password"} 
+                 raise HTTPException(status_code=401, detail="Please make sure to enter the same password") 
             else:
                 query = text("""
                             UPDATE "Users"
@@ -315,19 +321,20 @@ async def password_user(user : UpdatePassword):
                             WHERE email = :email
                             """)
                 query = query.bindparams(
-                    password = hash_md5(user.new_password)
+                    password = hash_md5(user.new_password),
+                    email = user.email
                     )
                 with engine.begin() as conn:
                         result = conn.execute(query)
-                        existing_email_password = result.fetchone()
+                return {"Successful update": "User password updated successfully"}
         else:
-            return {"error": "User email not found"}
+            raise HTTPException(status_code=404, detail="User not found")
     
 
 # Endpoint : /upload/picture/user/{user_id}
 # Type : POST
 # this endpoint upload a picture
-router.post("/upload/picture/user/{user_id}")
+@router.post("/upload/picture/user/{user_id}")
 async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = File(...)):
 
     query = text("""
@@ -372,7 +379,7 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
 # Endpoint : /picture/user/{user_id}
 # Type : get
 # this endpoint recover a user picture
-router.get("/picture/user/{user_id}")
+@router.get("/picture/user/{user_id}")
 async def picture_user():
     pass
 
@@ -381,23 +388,25 @@ async def picture_user():
 # Endpoint : /departements/{id_departement}/users/add
 # Type : POST
 # this endpoint add users defined to a group
-router.post("/departements/{id_departement}/users/add")
+@router.post("/departements/{id_departement}/users/add")
 async def add_user():
     pass
 
 # Endpoint : /departements/{id_departement}/users/remove
 # Type : POST
 # this endpoint remove users defined to a group
-router.post("/departements/{id_departement}/users/remove")
+@router.post("/departements/{id_departement}/users/remove")
 async def remove_user():
     pass
 
 # Endpoint : /departements/{id_departement}/users
 # Type : GET
 # this endpoint retrieves users from a group
-router.get("/departements/{id_departement}/users")
+@router.get("/departements/{id_departement}/users")
 async def remove_user():
     pass
+
+
 
 #--------------------------------------RequestRH-------------------------------------#
 
@@ -479,20 +488,20 @@ async def get_rh_requests():
 # Endpoint : /event/add
 # Type : POST
 # this endpoint add an evenement
-router.post("/event/add")
+@router.post("/event/add")
 async def add_event():
     pass
 
 # Endpoint : /event/add
 # Type : GET
 # this endpoint retrievies event(s)
-router.get("/event")
+@router.get("/event")
 async def retrievial_event():
     pass
 
 # Endpoint : /event/remove
 # Type : POST
 # this endpoint remove an event
-router.get("event/remove")
+@router.get("event/remove")
 async def remove_event():
     pass
