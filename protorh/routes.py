@@ -236,7 +236,7 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
             }
         return response
     else:
-        return HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
                 
 # Endpoint : /user/update
 # Type : POST
@@ -313,7 +313,7 @@ async def password_user(user : UpdatePassword):
     if existing_password:
         if hash_md5(user.password) == existing_password[0]: 
             if user.new_password != user.new_password_repeat:
-                return {"Please make sure to enter the same password"} 
+                 raise HTTPException(status_code=401, detail="Please make sure to enter the same password") 
             else:
                 query = text("""
                             UPDATE "Users"
