@@ -253,7 +253,21 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
 # this endpoint update user informations
 @router.post("/user/update")
 async def update_user(user: Update):
-    if user.role == "admin":
+    query = text("""
+                SELECT id FROM "Users"
+                WHERE id = :id
+                """)
+    query = query.bindparams(
+        id=user.id
+    )
+    with engine.begin() as conn:
+        result = conn.execute(query)
+        existing_id = result.fetchone()
+
+    if existing_id[0] != user.id:
+        return HTTPException(status_code=404, detail="User not found")
+
+    elif user.role == "admin":
         query = text("""
             UPDATE "Users"
             SET email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
@@ -283,7 +297,7 @@ async def update_user(user: Update):
     with engine.begin() as conn:
         result = conn.execute(query)
 
-    if result:
+    if result.rowcount > 0:
         return {"Successful update": "User information updated successfully"}
     else:
         raise HTTPException(status_code=401, detail="Update failed")
@@ -318,9 +332,10 @@ async def password_user(user : UpdatePassword):
                     )
                 with engine.begin() as conn:
                         result = conn.execute(query)
-                        existing_email_password = result.fetchone()
+                        update_password = result.fetchone()
+                return {"Successful update": "User password updated successfully"}
         else:
-            return {"error": "User email not found"}
+            raise HTTPException(status_code=404, detail="User not found")
     
 
 # Endpoint : /upload/picture/user/{user_id}
