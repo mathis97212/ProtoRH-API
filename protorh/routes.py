@@ -404,30 +404,75 @@ async def remove_user():
 # Endpoint : /rh/msg/add
 # Type : POST
 # this endpoint create an RH request
-router.post("/rh/msg/add")
-async def create_request():
-    pass
+router.post("/rh/msg/add", methods=['POST'])
+async def add_rh_request():
+    data = request.json
+    id_user = data['id_user']
+    content = data['content']
+
+    #nouvelle demande RH avec des données fournies
+    request_data = {
+        'id_user': id_user,
+        'content': content,
+        'registration_date': 'date d\'ajout factice',
+        'visibility': True,
+        'close': False,
+        'last_action': 'date de dernière action factice',
+        'content_history': []
+    }
+
+    add_rh_request.append(request_data)
+    return jsonify({'message': 'Demande RH ajoutée avec succès!'}), 201
 
 # Endpoint : /rh/msg/remove
 # Type : POST
 # this endpoint remove an RH request
-router.post("/rh/msg/remove")
-async def remove_request():
-    pass
+router.post("/rh/msg/remove", methods=['POST'])
+async def remove_rh_request():
+    data = request.json
+    request_id = data['id']
+
+    for request_data in remove_rh_request:
+        if request_data['id'] == request_id:
+            request_data['visibility'] = False
+            request_data['close'] = True
+            request_data['delete_date'] = 'date de l\'action factice'
+            request_data['last_action'] = 'date de l\'action factice'
+
+    return jsonify({'message': 'Demande RH non trouvée'}), 404
 
 # Endpoint : /rh/msg/update
 # Type : POST
 # this endpoint update an RH request
-router.post("/rh/msg/update")
-async def update_request():
-    pass
+router.post("/rh/msg/update", methods=['POST'])
+async def update_rh_request():
+    data = request.json
+    id_user = data['id_user']
+    content = data['content']
+
+    for request_data in update_rh_request:
+        if request_data['id_user'] == id_user:
+            new_content = {
+                'author': id_user,
+                'content': content,
+                'date': 'date de création du contenu factice'
+            }
+            request_data['last_action'] = 'date de dernière action factice'
+            request_data['content_history'].append(new_content)
+
+            return jsonify({'message': 'Demande RH mise à jour avec succès!'}), 200
+
+    return jsonify({'message': 'Demande RH non trouvée'}), 404
 
 # Endpoint : /rh/msg
 # Type : GET
 # this endpoint retrieves HR requests
-router.get("/rh/msg")
-async def retrieval_request():
-    pass
+router.get("/rh/msg", methods=['GET'])
+async def get_rh_requests():
+    # Vous devez vérifier l'authentification ici (JWT) pour s'assurer que seuls les managers peuvent accéder à cette ressource.
+
+    # Simplement, renvoyez toutes les demandes RH ici, mais vous pouvez ajouter la logique de gestion des privilèges.
+    return jsonify({'requests': 'rh_requests'}), 200
 
 #--------------------------------------Event-------------------------------------#
 
