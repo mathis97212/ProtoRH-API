@@ -251,48 +251,62 @@ async def info_user(id_user: int, valid_token: bool = Depends(valide_token)):
 # Endpoint : /user/update
 # Type : POST
 # this endpoint update user informations
-router.post("/user/update")
+@router.post("/user/update")
 async def update_user(user: Update):
     if user.role == "admin":
         query = text("""
                     UPDATE "Users"
-                    SET name = :name, email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
+                    SET email = :email, lastname = :lastname, firstname = :firstname, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, role = :role, departements = :departements
                     WHERE id = :id 
                      """)
+        query = query.bindparams(
+            id=user.id,
+            name=user.name, 
+            email=user.email, 
+            lastname=user.lastname, 
+            firstname=user.firstname, 
+            birthdaydate=user.birthdaydate, 
+            address=user.address, 
+            postalcode=user.postalcode, 
+            age=user.age, 
+            meta=user.meta, 
+            registrationdate=user.registrationdate, 
+            token=user.token, 
+            role=user.role, 
+            departements=user.departements
+        )
     else:
         query = text("""
                     UPDATE "Users"
                     SET name = :name, email = :email, birthdaydate = :birthdaydate, address = :address, postalcode = :postalcode, age = :age, meta = :meta, registrationdate = :registrationdate, departements = :departements
                     WHERE id = :id
                      """)
-    query = query.bindparams(
-        id=user.id,
-        name=user.name, 
-        email=user.email, 
-        lastname=user.lastname, 
-        firstname=user.firstname, 
-        birthdaydate=user.birthdaydate, 
-        address=user.address, 
-        postalcode=user.postalcode, 
-        age=user.age, 
-        meta=user.meta, 
-        registrationdate=user.registrationdate, 
-        token=user.token, 
-        role=user.role, 
-        departements=user.departements
+        query = query.bindparams(
+            id=user.id,
+            name=user.name, 
+            email=user.email, 
+            birthdaydate=user.birthdaydate, 
+            address=user.address, 
+            postalcode=user.postalcode, 
+            age=user.age, 
+            meta=user.meta, 
+            registrationdate=user.registrationdate, 
+            token=user.token, 
+            departements=user.departements
         )
     with engine.begin() as conn:
             result = conn.execute(query)
             user_values = result.fetchone()
+            print(user_values)
     if user_values:
-        return {"Successful update"}
+        return {"Successful update":user_values}
     else:
         HTTPException(status_code=401, detail="Update failed")
 
 # Endpoint : /user/password
 # Type : POST
 # this endpoint update the user password
-router.post("/user/password")
+@router.post("/user/password")
 async def password_user(user : UpdatePassword):
 
     query = text("""
@@ -327,7 +341,7 @@ async def password_user(user : UpdatePassword):
 # Endpoint : /upload/picture/user/{user_id}
 # Type : POST
 # this endpoint upload a picture
-router.post("/upload/picture/user/{user_id}")
+@router.post("/upload/picture/user/{user_id}")
 async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = File(...)):
 
     query = text("""
@@ -372,7 +386,7 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
 # Endpoint : /picture/user/{user_id}
 # Type : get
 # this endpoint recover a user picture
-router.get("/picture/user/{user_id}")
+@router.get("/picture/user/{user_id}")
 async def picture_user():
     pass
 
@@ -381,21 +395,21 @@ async def picture_user():
 # Endpoint : /departements/{id_departement}/users/add
 # Type : POST
 # this endpoint add users defined to a group
-router.post("/departements/{id_departement}/users/add")
+@router.post("/departements/{id_departement}/users/add")
 async def add_user():
     pass
 
 # Endpoint : /departements/{id_departement}/users/remove
 # Type : POST
 # this endpoint remove users defined to a group
-router.post("/departements/{id_departement}/users/remove")
+@router.post("/departements/{id_departement}/users/remove")
 async def remove_user():
     pass
 
 # Endpoint : /departements/{id_departement}/users
 # Type : GET
 # this endpoint retrieves users from a group
-router.get("/departements/{id_departement}/users")
+@router.get("/departements/{id_departement}/users")
 async def remove_user():
     pass
 
@@ -404,28 +418,28 @@ async def remove_user():
 # Endpoint : /rh/msg/add
 # Type : POST
 # this endpoint create an RH request
-router.post("/rh/msg/add")
+@router.post("/rh/msg/add")
 async def create_request():
     pass
 
 # Endpoint : /rh/msg/remove
 # Type : POST
 # this endpoint remove an RH request
-router.post("/rh/msg/remove")
+@router.post("/rh/msg/remove")
 async def remove_request():
     pass
 
 # Endpoint : /rh/msg/update
 # Type : POST
 # this endpoint update an RH request
-router.post("/rh/msg/update")
+@router.post("/rh/msg/update")
 async def update_request():
     pass
 
 # Endpoint : /rh/msg
 # Type : GET
 # this endpoint retrieves HR requests
-router.get("/rh/msg")
+@router.get("/rh/msg")
 async def retrieval_request():
     pass
 
@@ -434,21 +448,21 @@ async def retrieval_request():
 # Endpoint : /event/add
 # Type : POST
 # this endpoint add an evenement
-router.post("/event/add")
+@router.post("/event/add")
 async def add_event():
     pass
 
 # Endpoint : /event/add
 # Type : GET
 # this endpoint retrievies event(s)
-router.get("/event")
+@router.get("/event")
 async def retrievial_event():
     pass
 
 # Endpoint : /event/remove
 # Type : POST
 # this endpoint remove an event
-router.get("event/remove")
+@router.get("event/remove")
 async def remove_event():
     pass
 

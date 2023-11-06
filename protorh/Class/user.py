@@ -9,7 +9,6 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
     email = Column(String, index=True)
     password = Column(String, index=True)
     password_repeat = Column(String, index=True)
@@ -40,7 +39,6 @@ class Update(BaseModel):
     id : int
     name : str
     email : str
-    password : str
     firstname : str
     lastname : str
     birthdaydate : date
@@ -49,7 +47,6 @@ class Update(BaseModel):
     age : int
     meta : str
     registrationdate : date
-    token : str
     role : str
     departements : int
 
@@ -64,6 +61,7 @@ class UserConnect(BaseModel):
     password : str
 
 class GetUser(BaseModel):
+    id : int
     firstname: str
 
 class UploadProfilePicture(BaseModel):
