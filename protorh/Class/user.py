@@ -1,13 +1,10 @@
-# Importation des modules et bibliothèques nécessaires.
-from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean  # Pour la gestion de la base de données.
-from sqlalchemy.ext.declarative import declarative_base  # Pour créer une classe de base pour les classes de modèle.
-from pydantic import BaseModel, Json  # Pour définir des modèles Pydantic.
-from datetime import date  # Pour travailler avec les dates.
+from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from pydantic import BaseModel, Json
+from datetime import date
 
-# Création d'une classe de modèle de base SQLAlchemy.
 Base = declarative_base()
 
-# Définition de la classe "User" qui correspond à la table "users" dans la base de données.
 class User(Base):
     __tablename__ = "users"
 
@@ -23,62 +20,52 @@ class User(Base):
     postalcode = Column(String, index=True)
     age = Column(Integer)
     meta = Column(JSON)
-    registrationdate = Column(String)
+    registrationdate = (String)
     token = Column(String, index=True)
     role = Column(String, index=True)
     departements = Column(Integer, nullable=True)
 
-# Définition des classes Pydantic pour gérer les opérations liées aux utilisateurs.
 class Create(BaseModel):
-    email: str
-    password: str
-    password_repeat: str
-    firstname: str
-    lastname: str
-    birthdaydate: date
-    address: str
-    postalcode: str
+    email : str
+    password : str
+    password_repeat : str
+    firstname : str
+    lastname : str
+    birthdaydate : date
+    address : str
+    postalcode : str
+    role : str = "user"
 
 class Update(BaseModel):
-    email: str
-    password: str
-    firstname: str
-    lastname: str
-    birthdaydate: date
-    address: str
-    postalcode: str
-    age: int
+    id : int
+    name : str
+    email : str
+    password : str
+    firstname : str
+    lastname : str
+    birthdaydate : date
+    address : str
+    postalcode : str
+    age : int
+    meta : str
+    registrationdate : date
+    token : str
+    role : str
+    departements : int
 
 class UpdatePassword(BaseModel):
-    email: str
-    password: str
+    email : str
+    password : str
+    new_password : str
+    new_password_repeat : str
 
 class UserConnect(BaseModel):
-    email: str
-    password: str
+    email : str
+    password : str
 
 class GetUser(BaseModel):
-    id: int
-    email: str
-    password: str
     firstname: str
-    lastname: str
-    birthdaydate: date
-    address: str
-    postalcode: str
-    age: int
-    meta: str
-    registrationdate: date
-    token: str
-    role: str
-    departements: int
 
 class UploadProfilePicture(BaseModel):
-    email: str
-    password: str
-    firstname: str
-    lastname: str
-    birthdaydate: date
-    address: str
-    postalcode: str
-    age: int
+    id : int
+    token : str
