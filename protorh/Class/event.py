@@ -1,12 +1,14 @@
 import subprocess, uvicorn
-from fastapi import FastAPI
-from sqlalchemy import create_engine, Column, Integer, String, Float, text, engine, JSON
+import os
+from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 from pydantic import BaseModel
+from fastapi import FastAPI
+from datetime import date
 
-Base = declarative_base
+Base = declarative_base()
 
 class Event(Base):
     __tablename__ = "Event"
@@ -20,21 +22,21 @@ class Event(Base):
 class CreateEvent(BaseModel):
     id : int
     Name : str 
-    Date : int 
+    Date : date
     Description : str
     UserID : int
     DepartmentID : int
 class GetEvent(BaseModel):
     id : int
     Name : str 
-    Date : int 
+    Date : date
     Description : str
     UserID : int
     DepartmentID : int
 class RemoveEvent(BaseModel):
     id : int
     Name : str 
-    Date : int 
+    Date : date
     Description : str
     UserID : int
     DepartmentID : int

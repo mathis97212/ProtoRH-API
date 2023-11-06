@@ -1,7 +1,10 @@
-
 -- supprime l'anienne BDD avant d'éxectuer le script
 DROP DATABASE IF EXISTS protorh;
 CREATE DATABASE protorh;
+
+CREATE USER ilyes WITH PASSWORD '1234';
+ALTER USER ilyes CREATEDB; 
+ALTER USER ilyes WITH SUPERUSER;
 
 -- permet de se connecter à la BDD protorh
 \c protorh;
@@ -10,23 +13,25 @@ CREATE DATABASE protorh;
 DROP TABLE IF EXISTS "Event";
 DROP TABLE IF EXISTS "RequestRH";
 DROP TABLE IF EXISTS "Departement";
-DROP TABLE IF EXISTS "User";
+DROP TABLE IF EXISTS "Users";
 
 -- Créer une table User 
-CREATE TABLE "User" (
+CREATE TABLE "Users" (
     ID serial PRIMARY KEY,
-    Email TEXT,
-    Password VARCHAR(255),
-    Firstname TEXT,     
-    Lastname TEXT,    
-    BirthdayDate DATE,            
-    Address VARCHAR(255),                
-    PostalCode VARCHAR(255),              
-    Age int,                        
-    Meta JSON,                      
-    RegistrationDate DATE,       
-    Token VARCHAR(255),
-    Role TEXT
+    email TEXT,
+    password VARCHAR(255),
+    password_repeat VARCHAR(255),
+    firstname TEXT,     
+    lastname TEXT,    
+    birthdayDate DATE,            
+    address VARCHAR(255),                
+    postalcode VARCHAR(255),              
+    age int,                        
+    meta JSON,                      
+    registrationdate DATE,       
+    token VARCHAR(255),
+    role TEXT,
+    departements  INT NULL
 );
 
 -- Créer une table Departement
@@ -39,7 +44,7 @@ CREATE TABLE "Departement" (
 DROP TABLE IF EXISTS "RequestRH";
 CREATE TABLE "RequestRH" (
     ID serial PRIMARY KEY,
-    UserID INT REFERENCES "User"(id),
+    UserID INT REFERENCES "Users"(id),
     Content TEXT,
     RegistrationDate DATE,
     Visibility BOOLEAN,
@@ -54,6 +59,6 @@ CREATE TABLE "Event" (
     Name TEXT,
     Date DATE,
     Description TEXT,
-    UserID INT REFERENCES "User"(id),
+    UserID INT REFERENCES "Users"(id),
     DepartementID INT REFERENCES "Departement"(id)
 );
