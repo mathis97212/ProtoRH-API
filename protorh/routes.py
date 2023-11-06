@@ -18,6 +18,7 @@ from curses.ascii import isdigit
 from fastapi import APIRouter
 from database import get_db
 from fastapi.security import OAuth2PasswordBearer
+from typing import List
 
 from functools import wraps
 from flask import Flask, request, jsonify
@@ -413,33 +414,26 @@ async def remove_user():
 # Endpoint : /rh/msg/add
 # Type : POST
 # this endpoint create an RH request
-router.post("/rh/msg/add", methods=['POST'])
-async def add_rh_request():
-    data = request.json
-    id_user = data['id_user']
-    content = data['content']
-
-    #nouvelle demande RH avec des données fournies
-    request_data = {
-        'id_user': id_user,
-        'content': content,
-        'registration_date': 'date d\'ajout factice',
+router.post("/rh/msg/add")
+async def add_rh_request(request: RequestRH, request_data: RequestRH):
+    data = request_data.dict()
+    data.update({
+        'registration_date': 'fausse date d/ajout',
         'visibility': True,
         'close': False,
-        'last_action': 'date de dernière action factice',
+        'last_action': 'date de dernière fausse action',
         'content_history': []
-    }
+    })
 
-    add_rh_request.append(request_data)
+    add_rh_request.append(data)
     return jsonify({'message': 'Demande RH ajoutée avec succès!'}), 201
 
 # Endpoint : /rh/msg/remove
 # Type : POST
 # this endpoint remove an RH request
 router.post("/rh/msg/remove", methods=['POST'])
-async def remove_rh_request():
-    data = request.json
-    request_id = data['id']
+async def remove_rh_request(request_data:RemoveRequestRH):
+    request_id = request_data.id
 
     for request_data in remove_rh_request:
         if request_data['id'] == request_id:
@@ -447,17 +441,16 @@ async def remove_rh_request():
             request_data['close'] = True
             request_data['delete_date'] = 'date de l\'action factice'
             request_data['last_action'] = 'date de l\'action factice'
-
-    return jsonify({'message': 'Demande RH non trouvée'}), 404
+            return {'message': 'Demande RH marquée comme non visible!'}
+    raise HTTPException(status_code=404, detail='Demande RH non trouvée')
 
 # Endpoint : /rh/msg/update
 # Type : POST
 # this endpoint update an RH request
 router.post("/rh/msg/update", methods=['POST'])
-async def update_rh_request():
-    data = request.json
-    id_user = data['id_user']
-    content = data['content']
+async def update_rh_request(request_data:UpdateRequestRH):
+    id_user = request_data.id_user
+    content = request_data.content
 
     for request_data in update_rh_request:
         if request_data['id_user'] == id_user:
@@ -468,19 +461,17 @@ async def update_rh_request():
             }
             request_data['last_action'] = 'date de dernière action factice'
             request_data['content_history'].append(new_content)
-
-            return jsonify({'message': 'Demande RH mise à jour avec succès!'}), 200
-
-    return jsonify({'message': 'Demande RH non trouvée'}), 404
+            return {'message': 'Demande RH mise à jour avec succès!'}
+    raise HTTPException(status_code=404, detail='Demande RH non trouvée')
 
 # Endpoint : /rh/msg
 # Type : GET
 # this endpoint retrieves HR requests
 router.get("/rh/msg", methods=['GET'])
-async def get_rh_requests():
-    # Vous devez vérifier l'authentification ici (JWT) pour s'assurer que seuls les managers peuvent accéder à cette ressource.
+async def get_rh_request(request_data:GetRequestRH):
+    # vérifier l'authentification (JWT) pour être sur que seuls les managers peuvent accéder à ces ressource.
 
-    # Simplement, renvoyez toutes les demandes RH ici, mais vous pouvez ajouter la logique de gestion des privilèges.
+    # renvoi toutes les demandes RH
     return jsonify({'requests': 'rh_requests'}), 200
 
 #--------------------------------------Event-------------------------------------#
@@ -488,20 +479,40 @@ async def get_rh_requests():
 # Endpoint : /event/add
 # Type : POST
 # this endpoint add an evenement
-@router.post("/event/add")
-async def add_event():
-    pass
-
+@router.post("/event/add", response_model=Event)
+async def add_event(event: Event):
+    events_data = []
+    events_data.append(event)
+    return event
 # Endpoint : /event/add
 # Type : GET
 # this endpoint retrievies event(s)
 @router.get("/event")
-async def retrievial_event():
-    pass
+async def retrieval_event(events_data):
+    return events_data
+
 
 # Endpoint : /event/remove
 # Type : POST
 # this endpoint remove an event
 @router.get("event/remove")
-async def remove_event():
-    pass
+async def remove_event(event_ids: List[int]):
+    removed_events =[]
+    not_found_ids =[]
+    events_data = []
+
+    for event_id in event_ids:
+        if event_id < len(events_data):
+            removed_event = events_data.pop(event_id)
+        removed_events.append(removed_event)
+    else:
+        not_found_ids.append(event_id)
+
+    if not removed_events:
+        raise HTTPException(status_code=404, detail="Aucun événement trouvé avec les ID fournis")
+    
+    return {
+        "message": "Événements supprimés avec succès",
+        "removed_events": removed_events,
+        "not_found_ids": not_found_ids
+    }
