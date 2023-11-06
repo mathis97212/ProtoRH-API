@@ -263,9 +263,10 @@ async def update_user(user: Update):
     with engine.begin() as conn:
         result = conn.execute(query)
         existing_id = result.fetchone()
+        print(existing_id)
 
-    if existing_id[0] != user.id:
-        return HTTPException(status_code=404, detail="User not found")
+    if existing_id is None:
+        raise HTTPException(status_code=404, detail="User not found")
 
     elif user.role == "admin":
         query = text("""
