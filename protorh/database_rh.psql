@@ -1,0 +1,64 @@
+-- supprime l'anienne BDD avant d'éxectuer le script
+DROP DATABASE IF EXISTS protorh;
+CREATE DATABASE protorh;
+
+CREATE USER app WITH PASSWORD '123';
+ALTER USER app CREATEDB; 
+ALTER USER app WITH SUPERUSER;
+
+-- permet de se connecter à la BDD protorh
+\c protorh;
+
+-- supprime les aniennes tables avant d'éxectuer le script
+DROP TABLE IF EXISTS "Event";
+DROP TABLE IF EXISTS "RequestRH";
+DROP TABLE IF EXISTS "Departement";
+DROP TABLE IF EXISTS "Users";
+
+-- Créer une table User 
+CREATE TABLE "Users" (
+    ID serial PRIMARY KEY,
+    email TEXT,
+    password VARCHAR(255),
+    password_repeat VARCHAR(255),
+    firstname TEXT,     
+    lastname TEXT,    
+    birthdayDate DATE,            
+    address VARCHAR(255),                
+    postalcode VARCHAR(255),              
+    age int,                        
+    meta JSON,                      
+    registrationdate DATE,       
+    token VARCHAR(255),
+    role TEXT,
+    departements  INT NULL
+);
+
+-- Créer une table Departement
+CREATE TABLE "Departement" (
+    ID serial PRIMARY KEY,
+   Name TEXT
+);
+
+-- Créer une table RequestRH, fais références à la table User
+DROP TABLE IF EXISTS "RequestRH";
+CREATE TABLE "RequestRH" (
+    ID serial PRIMARY KEY,
+    user_id INT REFERENCES "Users"(id),
+    Content TEXT,
+    registrationdate DATE,
+    visibility BOOLEAN,
+    close BOOLEAN,
+    lastaction DATE,
+    contenthistory JSON
+);
+
+-- Créer une table Event, fais références aux tables User/Departement
+CREATE TABLE "Event" (
+    ID serial PRIMARY KEY,
+    Name TEXT,
+    date DATE,
+    description TEXT,
+    user_id INT REFERENCES "Users"(id),
+    departement_id INT REFERENCES "Departement"(id)
+);
