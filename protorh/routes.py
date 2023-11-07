@@ -412,7 +412,7 @@ async def remove_user():
 # Type : POST
 # this endpoint create an RH request
 @router.post("/rh/msg/add", status_code=201)
-async def add_rh_request(user: CreateRequestRH, jwt_token: bool = Depends(valide_token)):
+async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(valide_token)):
     query=text("""
                 INSERT INTO "Users" (user_id, content, registrationdate, visibility, close, last_action, content_history) 
                 VALUES (user_id = :user_id, content = :content, registrationdate = :registrationdate, visibility = :visibility, close = :close, last_action = :lastaction, content_history = :content_history) RETURNING *
@@ -548,20 +548,20 @@ async def add_event(event: Event):
 # Type : GET
 # this endpoint retrievies event(s)
 @router.get("/event")
-async def retrieval_event(events_data):
-    return events_data
+async def retrieval_event(GetEvent):
+    return GetEvent
 
 
 # Endpoint : /event/remove
 # Type : POST
 # this endpoint remove an event
 @router.get("event/remove")
-async def remove_event(event_ids: list[int]):
+async def remove_event(RemoveEvent: list[int]):
     removed_events =[]
     not_found_ids =[]
     events_data = []
 
-    for event_id in event_ids:
+    for event_id in RemoveEvent:
         if event_id < len(events_data):
             removed_event = events_data.pop(event_id)
         removed_events.append(removed_event)
