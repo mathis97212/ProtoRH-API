@@ -3,7 +3,6 @@ from flask import session
 import os
 from fastapi import Depends, HTTPException, Path, Form, File, UploadFile
 from sqlalchemy import text, JSON, URL
-from PIL import Image
 
 from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
 from Class.departement import Department, AddUserToDepartment, RemoveUserFromDepartment, GetUsersInDepartment
@@ -21,9 +20,6 @@ from fastapi.security import OAuth2PasswordBearer
 
 from functools import wraps
 from flask import Flask, request, jsonify
-import shutil
-
-
 
 engine = get_db()
 router = APIRouter()

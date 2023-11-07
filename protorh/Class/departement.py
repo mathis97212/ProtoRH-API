@@ -1,5 +1,3 @@
-import subprocess, uvicorn
-import os
 from sqlalchemy import create_engine, Column, Integer, Float, String, text, Date, JSON, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
