@@ -21,6 +21,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from functools import wraps
 from flask import Flask, request, jsonify
+import shutil
 
 
 
@@ -297,7 +298,7 @@ async def update_user(user: Update):
 # Type : POST
 # this endpoint update the user password
 @router.post("/user/password")
-async def password_user(user : UpdatePassword):
+async def password_user(user : UpdatePassword): 
 
     query = text("""
                 SELECT password FROM "Users"
@@ -335,7 +336,7 @@ async def password_user(user : UpdatePassword):
 # Type : POST
 # this endpoint upload a picture
 @router.post("/upload/picture/user/{user_id}")
-async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = File(...)):
+async def upload_picture_user(user_id: int, image: UploadFile = File(...)):
 
     query = text("""
                 SELECT token FROM "Users"
@@ -343,36 +344,42 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
                  """)
     
     values = {
-            "id" : user.id
+            "id" : user_id
             }
 
-    with engine.begin as conn:
+    existing_token = None 
+
+    with engine.begin() as conn:
         result = conn.execute(query, values)
         existing_token = result.fetchone()
     
     if existing_token:
-        # Vérification de la taille et du format de l'image.
-        allowed_extensions = {'jpg','png', 'gif'}
+        allowed_extensions = {'jpg', 'png', 'gif'}
         
-        if image.content_type.split('/')[1] in allowed_extensions:
+        if image.filename.split('.')[-1] in allowed_extensions:
             img = Image.open(image.file)
             largeur, hauteur = img.size
 
             if largeur <= 800 and hauteur <= 800:
                 file_extension = image.filename.split('.')[-1]
-                file_name = f"{existing_token}.{file_extension}"
+                if not image.filename: 
+                    file_name = "assets/picture/profiles/pdp_base.png"
+                else:
+                    file_name = f"assets/picture/profiles/{existing_token}.{file_extension}"
+
                 file_path = f"assets/picture/profiles/{file_name}"
+                {existing_token}.save('{existing_token}.{file_extension}', '{file_extension}')
 
                 with open(file_path, 'wb') as f:
                     f.write(image.file.read())
 
-                return {"Image uploaded successfully."}
+                return {"message": "Image uploaded successfully."}
             else:
-                return {type: "upload_error", "error": "Image size exceeds the limit (800x800)."}
+                return {"type": "upload_error", "error": "Image size exceeds the limit (800x800)."}
         else:
-            return {type: "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
+            return {"type": "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
     else:
-        return {type: "user_error", "error": "User not found"}
+        return {"type": "user_error", "error": "User not found"}
 
 # Endpoint : /picture/user/{user_id}
 # Type : get

@@ -65,4 +65,3 @@ class GetUser(BaseModel):
 
 class UploadProfilePicture(BaseModel):
     id : int
-    token : str
