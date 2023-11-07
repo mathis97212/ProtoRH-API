@@ -330,56 +330,52 @@ async def password_user(user : UpdatePassword):
                 return {"Successful update": "User password updated successfully"}
         else:
             raise HTTPException(status_code=404, detail="User not found")
-    
 
 # Endpoint : /upload/picture/user/{user_id}
 # Type : POST
 # this endpoint upload a picture
 @router.post("/upload/picture/user/{user_id}")
 async def upload_picture_user(user_id: int, image: UploadFile = File(...)):
+    try:
+        query = text("""
+            SELECT token FROM "Users"
+            WHERE id = :id
+        """)
 
-    query = text("""
-                SELECT token FROM "Users"
-                WHERE id = :id
-                 """)
-    
-    values = {
-            "id" : user_id
-            }
+        query = query.bindparams(
+            id=user_id
+        )
+        with engine.begin() as conn:
+            result_exe = conn.execute(query)
+            result = result_exe.fetchone()
 
-    existing_token = None 
+        if result:
+            token = result['token']
+            file_extension = image.filename.split(".")[-1]
 
-    with engine.begin() as conn:
-        result = conn.execute(query, values)
-        existing_token = result.fetchone()
-    
-    if existing_token:
-        allowed_extensions = {'jpg', 'png', 'gif'}
-        
-        if image.filename.split('.')[-1] in allowed_extensions:
-            img = Image.open(image.file)
-            largeur, hauteur = img.size
+            valid_extensions = {'jpg','png', 'gif'}
+            if file_extension not in valid_extensions:
+                return {"type": "upload_error", "error": "Invalid file extension"}
 
-            if largeur <= 800 and hauteur <= 800:
-                file_extension = image.filename.split('.')[-1]
-                if not image.filename: 
-                    file_name = "assets/picture/profiles/pdp_base.png"
+            if image.content_type.startswith("image/"):
+                if image.content_length <= 800*800:
+                    file_path = f"assets/picture/profiles/{token}.{file_extension}"
+
+                    with open(file_path, "wb") as file:
+                        file.write(image.file.read())
+
+                    return {"message": "Image uploaded successfully"}
                 else:
-                    file_name = f"assets/picture/profiles/{existing_token}.{file_extension}"
-
-                file_path = f"assets/picture/profiles/{file_name}"
-                {existing_token}.save('{existing_token}.{file_extension}', '{file_extension}')
-
-                with open(file_path, 'wb') as f:
-                    f.write(image.file.read())
-
-                return {"message": "Image uploaded successfully."}
+                    return {"type": "upload_error", "error": "Invalid image size"}
             else:
-                return {"type": "upload_error", "error": "Image size exceeds the limit (800x800)."}
+                file_path = f"assets/picture/profiles/"
+
+                with open(file_path, "wb") as file:
+                    file.write(image.file.read())  
         else:
-            return {"type": "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
-    else:
-        return {"type": "user_error", "error": "User not found"}
+            return {"type": "user_error", "error": "User not found"}
+    except Exception as e:
+        return {"type": "upload_error", "error": str(e)}
 
 # Endpoint : /picture/user/{user_id}
 # Type : get
