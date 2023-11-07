@@ -13,49 +13,46 @@ Base = declarative_base()
 class RequestRH(Base):
     __tablename__ = "RequestRH"
     id = Column(Integer, primary_key = True, index=True)
-    UserID = Column(Integer)
-    Content = Column(String)
-    RegistrationDate = Column(Date)
-    Visibility = Column(Boolean)
-    Close = Column(Boolean)
-    LastAction = Column(Boolean)
-    ContentHistory = Column(JSON)
+    user_id = Column(Integer)
+    content = Column(String)
+    registrationdate = Column(Date)
+    visibility = Column(Boolean)
+    close = Column(Boolean)
+    lastaction = Column(Boolean)
+    contenthistory = Column(JSON)
     
 class CreateRequestRH(BaseModel):
-    UserID : int
-    Content : str
-    RegistrationDate : date
-    Visibility : bool
-    Close : bool
-    LastAction : bool
-    ContentHistory : str
+    user_id : int
+    content : str
+    lastaction : date
+    contenthistory : str
     
     
 class UpdateRequestRH(BaseModel):
     id : int 
-    UserID : int
+    user_id : int
     Content : str
-    RegistrationDate : date
-    Visibility : str
-    Close : str
-    LastAction : str
-    ContentHistory : str
+    registrationdate : date
+    visibility : str
+    close : str
+    lastaction : str
+    contenthistory : str
 
 class RemoveRequestRH(BaseModel):
-    UserID : int
-    Content : str
-    RegistrationDate : date
-    Visibility : str
-    Close : str
-    LastAction : str
-    ContentHistory : str
+    user_id : int
+    content : str
+    registrationdate : date
+    visibility : str
+    close : str
+    lastaction : str
+    contenthistory : str
 
 
 class GetRequestRH(BaseModel):
-    UserID : int
-    Content : str
-    RegistrationDate : date
-    Visibility : str
-    Close : str
-    LastAction : str
-    ContentHistory : str
+    user_id : int
+    content : str
+    registrationdate : date
+    visibility : str
+    close : str
+    lastaction : str
+    contenthistory : str

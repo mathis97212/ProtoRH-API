@@ -7,7 +7,7 @@ from PIL import Image
 
 from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
 from Class.departement import Department, AddUserToDepartment, RemoveUserFromDepartment, GetUsersInDepartment
-from Class.requestrh import RemoveRequestRH, UpdateRequestRH, RequestRH, GetRequestRH
+from Class.requestrh import CreateRequestRH, RemoveRequestRH, UpdateRequestRH, RequestRH, GetRequestRH
 from Class.event import Event, CreateEvent, GetEvent, RemoveEvent
 
 import datetime
@@ -313,7 +313,7 @@ async def password_user(user : UpdatePassword):
     if existing_password:
         if hash_md5(user.password) == existing_password[0]: 
             if user.new_password != user.new_password_repeat:
-                 raise HTTPException(status_code=401, detail="Please make sure to enter the same password") 
+                 raise HTTPException(status_code=401, detail="Please make sure to enter the same") 
             else:
                 query = text("""
                             UPDATE "Users"
@@ -373,8 +373,6 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
             return {type: "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
     else:
         return {type: "user_error", "error": "User not found"}
-        
-    
 
 # Endpoint : /picture/user/{user_id}
 # Type : get
@@ -411,16 +409,52 @@ async def remove_user():
 # Endpoint : /rh/msg/add
 # Type : POST
 # this endpoint create an RH request
-@router.post("/rh/msg/add")
-async def create_request():
-    pass
+@router.post("/rh/msg/add", status_code=201)
+async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(valide_token)):
+    query=text("""
+                INSERT INTO "Users" (user_id, content, registrationdate, visibility, close, last_action, content_history) 
+                VALUES (user_id = :user_id, content = :content, registrationdate = :registrationdate, visibility = :visibility, close = :close, last_action = :lastaction, content_history = :content_history) RETURNING *
+                """)
+    request_data = {
+        'user_id': user.user_id,
+        'content': user.content,
+        'registrationdate': datetime.date.today(),
+        'visibility': True,
+        'close': False,
+        'last_action': datetime.date.today(),
+        'content_history': []
+    }
+    with engine.begin as conn:
+        result=conn.execute(query, request_data)
+
+    if result.conrow > 0:
+        return {"Request created"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid request")
 
 # Endpoint : /rh/msg/remove
 # Type : POST
 # this endpoint remove an RH request
 @router.post("/rh/msg/remove")
-async def remove_request():
-    pass
+async def update_rh_request():
+    data = request.json
+    id_user = data['id_user']
+    content = data['content']
+
+    for request_data in update_rh_request:
+        if request_data['id_user'] == id_user:
+            new_content = {
+                'author': id_user,
+                'content': content,
+                'date': 'date de création du contenu factice'
+            }
+            request_data['last_action'] = 'date de dernière action factice'
+            request_data['content_history'].append(new_content)
+
+            return jsonify({'message': 'Demande RH mise à jour avec succès!'}), 200
+
+    return jsonify({'message': 'Demande RH non trouvée'}), 404
+
 
 # Endpoint : /rh/msg/update
 # Type : POST

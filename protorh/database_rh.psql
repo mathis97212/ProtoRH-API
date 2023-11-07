@@ -44,21 +44,21 @@ CREATE TABLE "Departement" (
 DROP TABLE IF EXISTS "RequestRH";
 CREATE TABLE "RequestRH" (
     ID serial PRIMARY KEY,
-    UserID INT REFERENCES "Users"(id),
+    user_id INT REFERENCES "Users"(id),
     Content TEXT,
-    RegistrationDate DATE,
-    Visibility BOOLEAN,
-    Close BOOLEAN,
-    LastAction DATE,
-    ContentHistory JSON
+    registrationdate DATE,
+    visibility BOOLEAN,
+    close BOOLEAN,
+    lastaction DATE,
+    contenthistory JSON
 );
 
 -- Créer une table Event, fais références aux tables User/Departement
 CREATE TABLE "Event" (
     ID serial PRIMARY KEY,
     Name TEXT,
-    Date DATE,
-    Description TEXT,
-    UserID INT REFERENCES "Users"(id),
-    DepartementID INT REFERENCES "Departement"(id)
+    date DATE,
+    description TEXT,
+    user_id INT REFERENCES "Users"(id),
+    departement_id INT REFERENCES "Departement"(id)
 );
