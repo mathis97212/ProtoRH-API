@@ -438,7 +438,7 @@ async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(vali
 # Type : POST
 # this endpoint remove an RH request
 @router.post("/rh/msg/remove")
-async def update_rh_request(user: RemoveRequestRH,):
+async def update_rh_request(request_data: RemoveRequestRH):
     data = request.json
     id_user = data['id_user']
     content = data['content']
