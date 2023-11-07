@@ -517,7 +517,7 @@ async def retrieval_event(events_data):
 # Type : POST
 # this endpoint remove an event
 @router.get("event/remove")
-async def remove_event(event_ids: List[int]):
+async def remove_event(event_ids: list[int]):
     removed_events =[]
     not_found_ids =[]
     events_data = []
