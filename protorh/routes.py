@@ -361,17 +361,12 @@ async def upload_picture_user(user_id: int, image: UploadFile = File(...)):
                 if image.content_length <= 800*800:
                     file_path = f"assets/picture/profiles/{token}.{file_extension}"
 
-                    with open(file_path, "wb") as file:
-                        file.write(image.file.read())
-
                     return {"message": "Image uploaded successfully"}
                 else:
                     return {"type": "upload_error", "error": "Invalid image size"}
             else:
-                file_path = f"assets/picture/profiles/"
-
-                with open(file_path, "wb") as file:
-                    file.write(image.file.read())  
+                file_path = f"assets/picture/profiles/pdp_base.png"
+            
         else:
             return {"type": "user_error", "error": "User not found"}
     except Exception as e:
