@@ -7,7 +7,7 @@ from PIL import Image
 
 from Class.user import User, Create, Update, UpdatePassword,GetUser, UploadProfilePicture, UserConnect
 from Class.departement import Department, AddUserToDepartment, RemoveUserFromDepartment, GetUsersInDepartment
-from Class.requestrh import RemoveRequestRH, UpdateRequestRH, RequestRH, GetRequestRH
+from Class.requestrh import CreateRequestRH, RemoveRequestRH, UpdateRequestRH, RequestRH, GetRequestRH
 from Class.event import Event, CreateEvent, GetEvent, RemoveEvent
 
 import datetime
@@ -18,8 +18,6 @@ from curses.ascii import isdigit
 from fastapi import APIRouter
 from database import get_db
 from fastapi.security import OAuth2PasswordBearer
-from typing import List
-
 from functools import wraps
 from flask import Flask, request, jsonify
 
@@ -314,7 +312,7 @@ async def password_user(user : UpdatePassword):
     if existing_password:
         if hash_md5(user.password) == existing_password[0]: 
             if user.new_password != user.new_password_repeat:
-                 raise HTTPException(status_code=401, detail="Please make sure to enter the same password") 
+                 raise HTTPException(status_code=401, detail="Please make sure to enter the same") 
             else:
                 query = text("""
                             UPDATE "Users"
@@ -374,8 +372,6 @@ async def upload_picture_user(user: UploadProfilePicture, image: UploadFile = Fi
             return {type: "upload_error", "error": "Invalid image format. Allowed formats: jpg, jpeg, png, gif."}
     else:
         return {type: "user_error", "error": "User not found"}
-        
-    
 
 # Endpoint : /picture/user/{user_id}
 # Type : get
@@ -409,48 +405,43 @@ async def remove_user():
 
 
 
+
 #--------------------------------------RequestRH-------------------------------------#
 
 # Endpoint : /rh/msg/add
 # Type : POST
 # this endpoint create an RH request
-router.post("/rh/msg/add")
-async def add_rh_request(request: RequestRH, request_data: RequestRH):
-    data = request_data.dict()
-    data.update({
-        'registration_date': 'fausse date d/ajout',
+@router.post("/rh/msg/add", status_code=201)
+async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(valide_token)):
+    query=text("""
+                INSERT INTO "Users" (user_id, content, registrationdate, visibility, close, last_action, content_history) 
+                VALUES (user_id = :user_id, content = :content, registrationdate = :registrationdate, visibility = :visibility, close = :close, last_action = :lastaction, content_history = :content_history) RETURNING *
+                """)
+    request_data = {
+        'user_id': user.user_id,
+        'content': user.content,
+        'registrationdate': datetime.date.today(),
         'visibility': True,
         'close': False,
-        'last_action': 'date de dernière fausse action',
+        'last_action': datetime.date.today(),
         'content_history': []
-    })
+    }
+    with engine.begin as conn:
+        result=conn.execute(query, request_data)
 
-    add_rh_request.append(data)
-    return jsonify({'message': 'Demande RH ajoutée avec succès!'}), 201
+    if result.conrow > 0:
+        return {"Request created"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid request")
 
 # Endpoint : /rh/msg/remove
 # Type : POST
 # this endpoint remove an RH request
-router.post("/rh/msg/remove", methods=['POST'])
-async def remove_rh_request(request_data:RemoveRequestRH):
-    request_id = request_data.id
-
-    for request_data in remove_rh_request:
-        if request_data['id'] == request_id:
-            request_data['visibility'] = False
-            request_data['close'] = True
-            request_data['delete_date'] = 'date de l\'action factice'
-            request_data['last_action'] = 'date de l\'action factice'
-            return {'message': 'Demande RH marquée comme non visible!'}
-    raise HTTPException(status_code=404, detail='Demande RH non trouvée')
-
-# Endpoint : /rh/msg/update
-# Type : POST
-# this endpoint update an RH request
-router.post("/rh/msg/update", methods=['POST'])
-async def update_rh_request(request_data:UpdateRequestRH):
-    id_user = request_data.id_user
-    content = request_data.content
+@router.post("/rh/msg/remove")
+async def update_rh_request(user: RemoveRequestRH,):
+    data = request.json
+    id_user = data['id_user']
+    content = data['content']
 
     for request_data in update_rh_request:
         if request_data['id_user'] == id_user:
@@ -461,19 +452,49 @@ async def update_rh_request(request_data:UpdateRequestRH):
             }
             request_data['last_action'] = 'date de dernière action factice'
             request_data['content_history'].append(new_content)
-            return {'message': 'Demande RH mise à jour avec succès!'}
-    raise HTTPException(status_code=404, detail='Demande RH non trouvée')
+
+            return jsonify({'message': 'Demande RH mise à jour avec succès!'}), 200
+
+    return jsonify({'message': 'Demande RH non trouvée'}), 404
+
+# Endpoint : /rh/msg/update
+# Type : POST
+# this endpoint update an RH request
+@router.post("/rh/msg/update")
+async def update_request(): 
+    try:
+        valide_token = request.headers.get('Authorization')
+        payload = valide_token
+        if not payload:
+            return 'Accès refusé', 401
+
+        data = request.get_json()
+        id_user = data['id_user']
+        content = data['content']
+
+        current_date = datetime.datetime.now()
+
+        for demande_rh in RequestRH:
+            if demande_rh['content'][0]['author'] == id_user:
+                demande_rh['last_action'] = current_date.isoformat()
+                new_content = {
+                    'author': id_user,
+                    'content': content,
+                    'date': current_date.isoformat()
+                }
+                demande_rh['content'].append(new_content)
+
+        return 'Demande mise à jour avec succès', 200
+
+    except Exception as e:
+        return str(e), 400
 
 # Endpoint : /rh/msg
 # Type : GET
 # this endpoint retrieves HR requests
-router.get("/rh/msg", methods=['GET'])
-async def get_rh_request(request_data:GetRequestRH):
-    # vérifier l'authentification (JWT) pour être sur que seuls les managers peuvent accéder à ces ressource.
-
-    # renvoi toutes les demandes RH
-    return jsonify({'requests': 'rh_requests'}), 200
-
+@router.get("/rh/msg")
+async def retrieval_request():
+    pass
 #--------------------------------------Event-------------------------------------#
 
 # Endpoint : /event/add
