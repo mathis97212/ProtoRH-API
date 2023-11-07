@@ -1,1 +1,1 @@
-uvicorn main:app --host localhost --port 5432 --reload
+uvicorn main:app --host localhost --port 4242 --reload
