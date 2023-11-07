@@ -461,7 +461,7 @@ async def update_rh_request(request_data: RemoveRequestRH):
 # Type : POST
 # this endpoint update an RH request
 @router.post("/rh/msg/update")
-async def update_request(): 
+async def update_request(demande_rh: UpdateRequestRH): 
     try:
         valide_token = request.headers.get('Authorization')
         payload = valide_token
@@ -474,7 +474,7 @@ async def update_request():
 
         current_date = datetime.datetime.now()
 
-        for demande_rh in RequestRH:
+        for demande_rh in UpdateRequestRH:
             if demande_rh['content'][0]['author'] == id_user:
                 demande_rh['last_action'] = current_date.isoformat()
                 new_content = {
