@@ -412,7 +412,7 @@ async def remove_user():
 # Type : POST
 # this endpoint create an RH request
 @router.post("/rh/msg/add", status_code=201)
-async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(valide_token)):
+async def add_rh_request(user: CreateRequestRH, jwt_token: bool = Depends(valide_token)):
     query=text("""
                 INSERT INTO "Users" (user_id, content, registrationdate, visibility, close, last_action, content_history) 
                 VALUES (user_id = :user_id, content = :content, registrationdate = :registrationdate, visibility = :visibility, close = :close, last_action = :lastaction, content_history = :content_history) RETURNING *
@@ -424,7 +424,7 @@ async def add_rh_request(user: CreateRequestRH, valid_token: bool = Depends(vali
         'visibility': True,
         'close': False,
         'last_action': datetime.date.today(),
-        'content_history': []
+        'content_hiory': []
     }
     with engine.begin as conn:
         result=conn.execute(query, request_data)
@@ -492,9 +492,48 @@ async def update_request(demande_rh: UpdateRequestRH):
 # Endpoint : /rh/msg
 # Type : GET
 # this endpoint retrieves HR requests
-@router.get("/rh/msg")
-async def retrieval_request():
-    pass
+router.get("/rh/msg", response_model=GetRequestRH)
+async def get_rh_requests(jwt_token: dict = Depends(valide_token)):
+    if jwt_token is None or "error" in jwt_token:
+        raise HTTPException(status_code=401, detail="Jetons JWT non valides ou non fournis")
+
+    user_role = jwt_token.get("role", "")
+
+    if user_role != "manager" and user_role != "admin":
+        raise HTTPException(status_code=403, detail="Vous n'avez pas la permission de consulter les demandes RH")
+
+    query = text('''
+        SELECT r.id, r.id_user, r.content, r.registration_date, r.visibility, r.close, r.last_action, r.delete_date 
+        FROM "RequestRH" r
+        INNER JOIN "user" u ON r.id_user = u.id
+        WHERE u.role IN ('manager', 'admin')
+    ''')
+
+    with engine.connect() as conn:
+        result = conn.execute(query)
+        requests = result.fetchall()
+
+    # Convertir les objets Row en dictionnaires
+    request_list = []
+    for row in requests:
+        if isinstance(row.content, list):
+            content_json = row.content
+        else:
+            content_json = json.loads(row.content)
+
+        request_dict = {
+            "id": row.id,
+            "id_user": row.id_user,
+            "content": content_json,
+            "registration_date": row.registration_date,
+            "visibility": row.visibility,
+            "close": row.close,
+            "last_action": row.last_action,
+            "delete_date": row.delete_date
+        }
+        request_list.append(GetRequestRH(**request_dict))
+
+    return GetRequestRH(requests=request_list)
 #--------------------------------------Event-------------------------------------#
 
 # Endpoint : /event/add
